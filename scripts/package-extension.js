@@ -23,3 +23,4 @@ if (fs.existsSync(zipPath)) {
   console.log(`⚖️ Size: ${(stats.size / 1024).toFixed(1)} KB`);
   console.log(`\nYou can now send "slopscan-extension.zip" directly to your friends!`);
 }
+

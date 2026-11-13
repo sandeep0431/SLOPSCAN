@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Copy, Check, Download, Type } from 'lucide-react';
+import { Copy, Check, Download, Type, Palette, ArrowLeft } from 'lucide-react';
 import { ScanResult } from '../../types/index.ts';
 import { generateFixPrompt } from '../../engine/promptGenerator.ts';
 
 interface BottomDeckProps {
   scanResult: ScanResult;
-  activeView: 'audit' | 'type' | 'fixplan';
-  onToggleView: (view: 'audit' | 'type' | 'fixplan') => void;
+  activeView: 'audit' | 'type' | 'color' | 'fixplan';
+  onToggleView: (view: 'audit' | 'type' | 'color' | 'fixplan') => void;
 }
 
 export const BottomDeck: React.FC<BottomDeckProps> = ({
@@ -68,23 +68,46 @@ export const BottomDeck: React.FC<BottomDeckProps> = ({
         )}
       </button>
 
-      {/* 2. Secondary Action: Typography & Design Tokens */}
-      <button
-        onClick={() => onToggleView(activeView === 'type' ? 'audit' : 'type')}
-        className={`w-full py-2 px-3 rounded-md text-xs font-medium flex items-center justify-center gap-2 transition-colors border ${
-          activeView === 'type'
-            ? 'bg-surface-raised text-content-primary border-accent'
-            : 'bg-surface-raised/70 hover:bg-surface-raised text-content-secondary hover:text-content-primary border-border'
-        }`}
-      >
-        <Type size={13} className="text-content-muted" />
-        <span>{activeView === 'type' ? '← Back to Findings' : 'Explore Typography & Tokens'}</span>
-        {activeView !== 'type' && (
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-accent/30 text-accent-light font-mono font-bold">
-            {scanResult.typography.distinctFamilies.length} FAMILIES
-          </span>
-        )}
-      </button>
+      {/* 2. Secondary Exploration Actions */}
+      {activeView !== 'audit' ? (
+        <button
+          onClick={() => onToggleView('audit')}
+          className="w-full py-2 px-3 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-colors border bg-surface-raised hover:bg-surface-overlay text-content-primary border-border"
+        >
+          <ArrowLeft size={13} className="text-accent-light" />
+          <span>Back to Craft Findings</span>
+        </button>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {/* Typography Inspector */}
+          <button
+            onClick={() => onToggleView('type')}
+            className="py-1.5 px-2.5 rounded-md text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors border bg-surface-raised/70 hover:bg-surface-raised text-content-secondary hover:text-content-primary border-border"
+          >
+            <Type size={12} className="text-content-muted" />
+            <span>Typography</span>
+            <span className="text-[9px] px-1 py-0.2 rounded-full bg-accent/30 text-accent-light font-mono font-bold">
+              {scanResult.typography.distinctFamilies.length}
+            </span>
+          </button>
+
+          {/* Color Intelligence Inspector */}
+          <button
+            onClick={() => onToggleView('color')}
+            className="py-1.5 px-2.5 rounded-md text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors border bg-surface-raised/70 hover:bg-surface-raised text-content-secondary hover:text-content-primary border-border"
+          >
+            <Palette size={12} className="text-cyan-400" />
+            <span>Color System</span>
+            {scanResult.colorSystem?.likelyBrandColors?.length > 0 && (
+              <span
+                className="w-2 h-2 rounded-full shrink-0 border border-white/40"
+                style={{ backgroundColor: scanResult.colorSystem.likelyBrandColors[0].normalizedHex }}
+                title="Preserved Brand Accent"
+              />
+            )}
+          </button>
+        </div>
+      )}
 
       {/* 3. Tertiary Action: Download JSON Report */}
       <button
@@ -106,4 +129,3 @@ export const BottomDeck: React.FC<BottomDeckProps> = ({
     </footer>
   );
 };
-

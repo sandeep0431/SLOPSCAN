@@ -9,7 +9,8 @@ export type Category =
   | 'copy'
   | 'components'
   | 'layout'
-  | 'motion';
+  | 'motion'
+  | 'colors';
 
 export interface BoundingBox {
   x: number;
@@ -178,6 +179,94 @@ export interface TypographyAnalysis {
   };
 }
 
+export interface ColorUsage {
+  color: string;
+  normalizedHex: string;
+  source: 'text' | 'background' | 'border' | 'shadow' | 'icon' | 'gradient';
+  frequency: number;
+  elementCount: number;
+  selectors: string[];
+  elementIds: string[];
+  sections: string[];
+  isInteractive: boolean;
+  isSaturated: boolean;
+  isNeutral: boolean;
+  luminance: number;
+  hueGroup: string;
+}
+
+export interface ColorRole {
+  role:
+    | 'canvas'
+    | 'surface'
+    | 'surface-subtle'
+    | 'surface-raised'
+    | 'text-primary'
+    | 'text-secondary'
+    | 'text-muted'
+    | 'border'
+    | 'border-strong'
+    | 'primary-accent'
+    | 'secondary-accent'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'decorative';
+  color: string;
+  normalizedHex: string;
+  confidence: Confidence;
+  evidence: string[];
+}
+
+export interface BrandColorCandidate {
+  color: string;
+  normalizedHex: string;
+  confidence: Confidence;
+  role: string;
+  evidence: string[];
+}
+
+export interface ColorDistribution {
+  neutralPercentage: number;
+  accentPercentage: number;
+  semanticPercentage: number;
+  decorativePercentage: number;
+  assessment: {
+    neutral: 'Weak' | 'Balanced' | 'Strong';
+    accent: 'Scarce' | 'Appropriate' | 'Overused' | 'Excessive';
+    secondaryAccents: 'None' | 'Controlled' | 'Too many';
+    semantic: 'Appropriate' | 'Misused' | 'Missing';
+    decorative: 'Subtle' | 'Moderate' | 'Excessive';
+  };
+}
+
+export interface ColorSystemAnalysis {
+  productContext: string;
+  dominantColors: string[];
+  likelyBrandColors: BrandColorCandidate[];
+  roles: ColorRole[];
+  distribution: ColorDistribution;
+  recommendations: {
+    preserve: string[];
+    reduceOrRemove: string[];
+    establish: {
+      canvas: string;
+      surface: string;
+      surfaceRaised: string;
+      textPrimary: string;
+      textSecondary: string;
+      textMuted: string;
+      border: string;
+      primaryAccent: string;
+      accentHover: string;
+      success: string;
+      warning: string;
+      error: string;
+    };
+    rules: string[];
+  };
+}
+
 export interface AuditSummary {
   highPriorityCount: number;
   mediumPriorityCount: number;
@@ -194,6 +283,7 @@ export interface ScanResult {
   issues: Issue[];
   summary: AuditSummary;
   typography: TypographyAnalysis;
+  colorSystem: ColorSystemAnalysis;
 }
 
 // Extension Messaging Protocol

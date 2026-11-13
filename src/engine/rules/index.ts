@@ -7,6 +7,7 @@ import { R040_ExcessiveExclamation, R041_GenericHypeLanguage, R042_GenericGreeti
 import { R050_EverythingIsAPill, R051_InconsistentRadiusSystem } from './components.ts';
 import { R060_TooManyHeroActions } from './layout.ts';
 import { R070_InfiniteDecorativeAnimation, R071_LayoutAnimation } from './motion.ts';
+import { COLOR_RULES } from '../color/colorRules.ts';
 
 export const ALL_RULES: Rule[] = [
   // Surfaces
@@ -47,4 +48,7 @@ export const ALL_RULES: Rule[] = [
   // Motion
   R070_InfiniteDecorativeAnimation,
   R071_LayoutAnimation,
+
+  // Color Intelligence
+  ...COLOR_RULES,
 ];

@@ -7,6 +7,7 @@ export function calculateSummary(issues: Issue[], context: ScanContext): AuditSu
 
   // Track category deductions
   const categoryScores: Record<Category, number> = {
+    colors: 100,
     surfaces: 100,
     spacing: 100,
     typography: 100,

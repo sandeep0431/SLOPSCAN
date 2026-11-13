@@ -67,6 +67,61 @@ export function generateFixPrompt(scanResult: ScanResult): string {
   prompt += `- **Simplify**: ${typography.recommendations.simplify}\n`;
   prompt += `- **Suggested Pairing**: Headings: ${typography.recommendations.suggested.headingFont} | Body: ${typography.recommendations.suggested.bodyFont} (${typography.recommendations.suggested.reason})\n\n`;
 
+  // Color System Refinement Section
+  if (scanResult.colorSystem) {
+    const cs = scanResult.colorSystem;
+    prompt += `## Color System Refinement\n\n`;
+    prompt += `> **Design Principle**: Refine the existing color system, do not erase the product's identity.\n\n`;
+    prompt += `### Product Context Detected\n`;
+    prompt += `- **Archetype**: ${cs.productContext}\n`;
+    prompt += `- **Surface Assessment**: Neutral: ${cs.distribution.assessment.neutral} (${cs.distribution.neutralPercentage}%) | Accent: ${cs.distribution.assessment.accent} (${cs.distribution.accentPercentage}%) | Decorative: ${cs.distribution.assessment.decorative} (${cs.distribution.decorativePercentage}%)\n\n`;
+
+    if (cs.recommendations.preserve.length > 0) {
+      prompt += `### Preserve\n`;
+      for (const item of cs.recommendations.preserve) {
+        prompt += `- ${item}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    if (cs.recommendations.reduceOrRemove.length > 0) {
+      prompt += `### Reduce or Remove\n`;
+      for (const item of cs.recommendations.reduceOrRemove) {
+        prompt += `- ${item}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    prompt += `### Establish Semantic Design Tokens\n`;
+    prompt += `Standardize colors into CSS custom properties to replace ad-hoc inline and utility colors:\n\n`;
+    prompt += `\`\`\`css\n`;
+    prompt += `:root {\n`;
+    prompt += `  /* Surfaces & Canvas */\n`;
+    prompt += `  --canvas: ${cs.recommendations.establish.canvas};\n`;
+    prompt += `  --surface: ${cs.recommendations.establish.surface};\n`;
+    prompt += `  --surface-raised: ${cs.recommendations.establish.surfaceRaised};\n`;
+    prompt += `  --border: ${cs.recommendations.establish.border};\n\n`;
+    prompt += `  /* Typography Hierarchy */\n`;
+    prompt += `  --text-primary: ${cs.recommendations.establish.textPrimary};\n`;
+    prompt += `  --text-secondary: ${cs.recommendations.establish.textSecondary};\n`;
+    prompt += `  --text-muted: ${cs.recommendations.establish.textMuted};\n\n`;
+    prompt += `  /* Interactive Brand Accent (Preserved) */\n`;
+    prompt += `  --color-primary: ${cs.recommendations.establish.primaryAccent};\n`;
+    prompt += `  --color-primary-hover: ${cs.recommendations.establish.accentHover};\n\n`;
+    prompt += `  /* Semantic Feedback */\n`;
+    prompt += `  --color-success: ${cs.recommendations.establish.success};\n`;
+    prompt += `  --color-warning: ${cs.recommendations.establish.warning};\n`;
+    prompt += `  --color-error: ${cs.recommendations.establish.error};\n`;
+    prompt += `}\n`;
+    prompt += `\`\`\`\n\n`;
+
+    prompt += `### Color System Guardrails\n`;
+    for (const rule of cs.recommendations.rules) {
+      prompt += `1. ${rule}\n`;
+    }
+    prompt += `\n`;
+  }
+
   prompt += `## Completion Verification\n`;
   prompt += `After applying these refinements, verify that:\n`;
   prompt += `- The interface renders with calm, professional confidence.\n`;

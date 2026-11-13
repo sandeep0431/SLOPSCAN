@@ -5,11 +5,12 @@ import { SummaryStrip } from './components/SummaryStrip.tsx';
 import { AuditTab } from './components/AuditTab.tsx';
 import { SectionMapView } from './components/SectionMapView.tsx';
 import { TypographyTab } from './components/TypographyTab.tsx';
+import { ColorSystemTab } from './components/ColorSystemTab.tsx';
 import { BottomDeck } from './components/BottomDeck.tsx';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<'audit' | 'type' | 'fixplan'>('audit');
+  const [activeView, setActiveView] = useState<'audit' | 'type' | 'color' | 'fixplan'>('audit');
   const [viewMode, setViewMode] = useState<'feed' | 'spatial'>('feed');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -122,6 +123,7 @@ export const App: React.FC = () => {
 
     const list = [{ id: 'all', label: 'All', count: scanResult.issues.length }];
     const allCats: { id: Category; label: string }[] = [
+      { id: 'colors', label: 'Colors' },
       { id: 'surfaces', label: 'Surfaces' },
       { id: 'typography', label: 'Typography' },
       { id: 'spacing', label: 'Spacing' },
@@ -227,8 +229,10 @@ export const App: React.FC = () => {
                   onSimulateFix={handleSimulateFix}
                 />
               )
-            ) : (
+            ) : activeView === 'type' ? (
               <TypographyTab typography={scanResult.typography} />
+            ) : (
+              <ColorSystemTab colorSystem={scanResult.colorSystem} />
             )}
           </main>
 
