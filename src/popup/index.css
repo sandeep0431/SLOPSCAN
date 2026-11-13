@@ -5,27 +5,27 @@
 @layer base {
   body {
     @apply bg-canvas text-content-primary antialiased select-none font-sans;
-    width: 420px;
-    min-height: 540px;
+    width: 430px;
+    height: 600px;
     max-height: 600px;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    overflow: hidden;
   }
 }
 
-/* Custom subtle scrollbar */
+/* Custom modern scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #0D0E11;
+  background: #090B10;
 }
 ::-webkit-scrollbar-thumb {
-  background: #282C37;
-  border-radius: 3px;
+  background: #1E2538;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3E4452;
+  background: #2D3752;
 }
-
