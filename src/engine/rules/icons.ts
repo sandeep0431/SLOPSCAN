@@ -3,6 +3,11 @@ import type { Rule, ScanContext, Issue } from '../../types/index.ts';
 // Comprehensive regex for emoji characters
 const EMOJI_REGEX = /([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/u;
 
+// Functional punctuation / UI close symbols that should not be flagged as decorative emoji
+const FUNCTIONAL_SYMBOLS = new Set([
+  '✕', '×', '✖', '+', '−', '-', '…', '•', '✓', '✔', '→', '←', '↑', '↓', '▲', '▼', '◀', '▶',
+]);
+
 export const R030_DecorativeEmoji: Rule = {
   id: 'R030',
   name: 'Decorative Emoji',
@@ -26,6 +31,7 @@ export const R030_DecorativeEmoji: Rule = {
       const text = el.directText || el.text;
       const match = text.match(EMOJI_REGEX);
       if (match) {
+        if (FUNCTIONAL_SYMBOLS.has(match[0])) continue;
         issues.push({
           id: `issue-${el.id}-r030`,
           ruleId: 'R030',

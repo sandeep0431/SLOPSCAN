@@ -11,9 +11,10 @@ function isSaturatedColor(colorStr: string): boolean {
     const b = parseInt(rgbMatch[3], 10);
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    // If delta is significant and not extreme dark/light, it is colored
+    // If very dark (e.g. slate-900 rgb(15, 23, 42)) or very light neutral, it is a neutral surface, not an accent
+    if (max < 50 || min > 240) return false;
     const delta = max - min;
-    return delta > 25 && max > 30 && min < 240;
+    return delta > 30;
   }
   // Hex colors
   const hexMatch = colorStr.match(/#([0-9a-f]{3,8})/i);
