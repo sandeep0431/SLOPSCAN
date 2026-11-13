@@ -70,21 +70,18 @@ ${issue.diff ? `### Code Diff\n\`\`\`diff\n- ${issue.diff.remove}\n+ ${issue.dif
     switch (issue.severity) {
       case 'high':
         return {
-          numBg: 'bg-amber-400 text-black',
-          pillBg: 'bg-red-500/20 text-red-300 border border-red-500/40',
+          pillBg: 'bg-rose-950/40 text-rose-300/90 border border-rose-800/40',
           label: 'CRITICAL',
         };
       case 'medium':
         return {
-          numBg: 'bg-amber-400 text-black',
-          pillBg: 'bg-amber-400/20 text-amber-300 border border-amber-400/40',
+          pillBg: 'bg-amber-950/40 text-amber-300/90 border border-amber-800/40',
           label: 'MAJOR',
         };
       case 'low':
       default:
         return {
-          numBg: 'bg-amber-400 text-black',
-          pillBg: 'bg-sky-400/20 text-sky-300 border border-sky-400/40',
+          pillBg: 'bg-slate-800/50 text-slate-300 border border-slate-700/40',
           label: 'MINOR',
         };
     }
@@ -93,23 +90,22 @@ ${issue.diff ? `### Code Diff\n\`\`\`diff\n- ${issue.diff.remove}\n+ ${issue.dif
   const badge = getSeverityBadge();
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-4 shadow-card hover:border-border-strong transition-all space-y-3">
+    <div className="bg-surface border border-border rounded-lg p-3.5 shadow-card hover:border-border-strong transition-all space-y-2.5">
       {/* Top Badge Row */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span
-            className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${badge.numBg}`}
-          >
+          {/* Subtle Number Pill */}
+          <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-mono font-bold bg-surface-raised border border-border-strong text-white">
             {index + 1}
           </span>
 
           <span
-            className={`px-2 py-0.5 rounded-sm text-[10px] font-bold tracking-wider uppercase ${badge.pillBg}`}
+            className={`px-1.5 py-0.2 rounded-sm text-[9px] font-bold tracking-wider uppercase ${badge.pillBg}`}
           >
             {badge.label}
           </span>
 
-          <span className="px-2 py-0.5 rounded-sm bg-surface-raised border border-border-subtle text-[10px] font-mono font-medium text-content-secondary uppercase">
+          <span className="px-1.5 py-0.2 rounded-sm bg-surface-inset border border-border-subtle text-[9px] font-mono font-medium text-content-muted uppercase">
             {issue.category}
           </span>
         </div>
@@ -122,31 +118,31 @@ ${issue.diff ? `### Code Diff\n\`\`\`diff\n- ${issue.diff.remove}\n+ ${issue.dif
       </div>
 
       {/* Title */}
-      <h3 className="text-sm font-bold text-content-primary tracking-tight">
+      <h3 className="text-[13px] font-bold text-white tracking-tight">
         {issue.title}
       </h3>
 
-      {/* Inset Metric & Code Diff Box (Clean Competitor-Beating Design) */}
-      <div className="bg-surface-inset border border-border-subtle rounded-md p-3.5 space-y-2.5 text-[11px] leading-relaxed">
+      {/* Inset Metric & Code Diff Box (Soothing, Disciplined Styling) */}
+      <div className="bg-surface-inset border border-border-subtle rounded-md p-3 space-y-2 text-[11px] leading-relaxed">
         {/* Monospace Metric / Primary Evidence Line */}
-        <div className="font-mono text-cyan-300 font-semibold break-all text-[12px] pb-1 border-b border-border-subtle/60">
+        <div className="font-mono text-teal-200/90 font-medium break-all text-[11px] pb-1 border-b border-border-subtle/50">
           {issue.evidence}
         </div>
 
         {/* Actionable "Try: ..." Guidance */}
-        <div className="text-emerald-400 text-[11px] leading-normal">
-          <span className="font-bold text-emerald-300">Try: </span>
+        <div className="text-[11px] leading-normal">
+          <span className="font-semibold text-teal-300">Try: </span>
           <span className="text-content-secondary">{issue.recommendation}</span>
         </div>
 
-        {/* Visual Code Diff (What competitor doesn't have!) */}
+        {/* Visual Code Diff */}
         {issue.diff && (
           <div className="bg-canvas border border-border-subtle rounded-sm p-2 font-mono text-[10px] space-y-1">
-            <div className="text-red-400 flex items-start gap-1">
+            <div className="text-rose-400/90 flex items-start gap-1">
               <span className="select-none font-bold shrink-0">-</span>
               <span className="truncate">{issue.diff.remove}</span>
             </div>
-            <div className="text-emerald-400 flex items-start gap-1">
+            <div className="text-emerald-400/90 flex items-start gap-1">
               <span className="select-none font-bold shrink-0">+</span>
               <span className="truncate">{issue.diff.add}</span>
             </div>
@@ -155,22 +151,22 @@ ${issue.diff ? `### Code Diff\n\`\`\`diff\n- ${issue.diff.remove}\n+ ${issue.dif
 
         {/* Target Selector */}
         {issue.selector && (
-          <div className="font-mono text-[10px] text-content-muted truncate pt-1 border-t border-border-subtle/50">
+          <div className="font-mono text-[10px] text-content-muted truncate pt-1 border-t border-border-subtle/40">
             Target: <span className="text-content-secondary">{issue.selector}</span>
           </div>
         )}
       </div>
 
-      {/* Action Buttons Row */}
-      <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-border-subtle">
+      {/* Action Buttons Row (Clean Neutral Controls) */}
+      <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-border-subtle">
         <div className="flex items-center gap-1.5">
           {/* Fix prompt copy */}
           <button
             onClick={handleCopySinglePrompt}
             title="Copy fix prompt for this issue"
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-content-secondary bg-surface-raised hover:bg-surface-overlay hover:text-content-primary border border-border rounded-sm transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-content-secondary bg-surface-raised hover:bg-surface-overlay hover:text-white border border-border-subtle rounded-sm transition-colors"
           >
-            {copiedPrompt ? <Check size={11} className="text-severity-mint" /> : <Copy size={11} />}
+            {copiedPrompt ? <Check size={11} className="text-teal-300" /> : <Copy size={11} />}
             <span>{copiedPrompt ? 'Copied' : 'Fix prompt'}</span>
           </button>
 
@@ -178,9 +174,9 @@ ${issue.diff ? `### Code Diff\n\`\`\`diff\n- ${issue.diff.remove}\n+ ${issue.dif
           <button
             onClick={handleCreateIssue}
             title="Copy formatted Bug Report markdown for GitHub / Jira / Linear"
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-content-secondary bg-surface-raised hover:bg-surface-overlay hover:text-content-primary border border-border rounded-sm transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-content-secondary bg-surface-raised hover:bg-surface-overlay hover:text-white border border-border-subtle rounded-sm transition-colors"
           >
-            {copiedIssue ? <Check size={11} className="text-severity-mint" /> : <Share2 size={11} />}
+            {copiedIssue ? <Check size={11} className="text-teal-300" /> : <Share2 size={11} />}
             <span>{copiedIssue ? 'Copied' : 'Create issue'}</span>
           </button>
 
@@ -190,11 +186,11 @@ ${issue.diff ? `### Code Diff\n\`\`\`diff\n- ${issue.diff.remove}\n+ ${issue.dif
             title="Preview clean design live on the webpage"
             className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-sm border transition-all ${
               isSimulated
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm'
-                : 'bg-surface-raised hover:bg-surface-overlay text-content-secondary hover:text-content-primary border-border'
+                ? 'bg-teal-950/60 text-teal-300 border-teal-700/60 shadow-xs'
+                : 'bg-surface-raised hover:bg-surface-overlay text-content-secondary hover:text-white border border-border-subtle'
             }`}
           >
-            <Zap size={11} className={isSimulated ? 'text-amber-400 fill-amber-400' : 'text-content-muted'} />
+            <Zap size={11} className={isSimulated ? 'text-teal-300 fill-teal-300' : 'text-content-muted'} />
             <span>{isSimulated ? 'Revert' : 'Simulate'}</span>
           </button>
         </div>
@@ -203,9 +199,9 @@ ${issue.diff ? `### Code Diff\n\`\`\`diff\n- ${issue.diff.remove}\n+ ${issue.dif
         <button
           onClick={() => onInspect(issue)}
           title="Highlight and spotlight element on live page"
-          className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold text-content-primary bg-surface-raised hover:bg-accent hover:text-white border border-border hover:border-accent rounded-sm transition-all shadow-sm"
+          className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-medium text-content-secondary bg-surface-raised hover:bg-surface-overlay hover:text-white border border-border-subtle rounded-sm transition-all shadow-xs"
         >
-          <Crosshair size={12} className="text-cyan-400" />
+          <Crosshair size={12} className="text-teal-400" />
           <span>Inspect</span>
         </button>
       </div>

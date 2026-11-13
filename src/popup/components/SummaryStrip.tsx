@@ -28,70 +28,88 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
   viewMode,
   onToggleViewMode,
 }) => {
+  // Realistic, disciplined grade calculation
+  const getGradeBadge = (score: number) => {
+    if (score >= 90) return { label: 'Grade A', bg: 'bg-teal-950/50 text-teal-300 border-teal-800/40' };
+    if (score >= 80) return { label: 'Grade B', bg: 'bg-slate-800/50 text-slate-300 border-slate-700/40' };
+    if (score >= 70) return { label: 'Grade C', bg: 'bg-amber-950/50 text-amber-300 border-amber-800/40' };
+    return { label: 'Review', bg: 'bg-rose-950/50 text-rose-300 border-rose-800/40' };
+  };
+
+  const grade = getGradeBadge(summary.auditSignal);
+
   return (
     <div className="bg-surface px-4 pt-3 pb-2.5 border-b border-border space-y-2.5 select-none">
       {/* 1. Score & View Mode Switcher */}
       <div className="flex items-center justify-between">
         <div className="flex items-baseline space-x-2">
-          <span className="text-3xl font-extrabold tracking-tight text-content-primary font-sans">
+          <span className="text-3xl font-extrabold tracking-tight text-white font-sans">
             {summary.auditSignal}
           </span>
           <span className="text-xs font-semibold text-content-muted">
             /100
           </span>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-xs bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 uppercase tracking-wider font-bold ml-1">
-            Grade A
+          <span
+            className={`text-[10px] font-mono px-2 py-0.5 rounded-sm border uppercase tracking-wider font-semibold ml-1 ${grade.bg}`}
+          >
+            {grade.label}
           </span>
         </div>
 
         {/* View Mode Switcher: Focus Feed vs Spatial Section Map */}
-        <div className="flex items-center bg-surface-inset border border-border-subtle rounded-xs p-0.5 text-[10px] font-mono">
+        <div className="flex items-center bg-surface-inset border border-border-subtle rounded-md p-0.5 text-[10px] font-mono">
           <button
             onClick={() => onToggleViewMode('feed')}
             title="Focus Feed View"
-            className={`px-2 py-1 rounded-xs transition-all flex items-center gap-1 ${
+            className={`px-2 py-1 rounded-sm transition-all flex items-center gap-1 ${
               viewMode === 'feed'
-                ? 'bg-accent text-white font-bold shadow-xs'
+                ? 'bg-surface-raised text-white font-semibold border border-border-strong shadow-xs'
                 : 'text-content-muted hover:text-content-secondary'
             }`}
           >
-            <ListFilter size={10} />
+            <ListFilter size={11} />
             <span>Feed</span>
           </button>
           <button
             onClick={() => onToggleViewMode('spatial')}
             title="Spatial Section Map"
-            className={`px-2 py-1 rounded-xs transition-all flex items-center gap-1 ${
+            className={`px-2 py-1 rounded-sm transition-all flex items-center gap-1 ${
               viewMode === 'spatial'
-                ? 'bg-accent text-white font-bold shadow-xs'
+                ? 'bg-surface-raised text-white font-semibold border border-border-strong shadow-xs'
                 : 'text-content-muted hover:text-content-secondary'
             }`}
           >
-            <Layers size={10} />
+            <Layers size={11} />
             <span>Map</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Severity Counts Row */}
-      <div className="flex items-center space-x-2.5 text-[11px] font-mono font-medium">
-        <span className="text-severity-high flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-severity-high"></span>
-          Critical {summary.highPriorityCount}
+      {/* 2. Severity Counts Row (Calm, Muted Tones) */}
+      <div className="flex items-center space-x-3 text-[11px] font-mono text-content-secondary">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-400/80"></span>
+          <span className={summary.highPriorityCount > 0 ? 'text-content-primary font-medium' : 'text-content-muted'}>
+            Critical {summary.highPriorityCount}
+          </span>
         </span>
         <span className="text-content-muted">•</span>
-        <span className="text-severity-medium flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-severity-medium"></span>
-          Major {summary.mediumPriorityCount}
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80"></span>
+          <span className={summary.mediumPriorityCount > 0 ? 'text-content-primary font-medium' : 'text-content-muted'}>
+            Major {summary.mediumPriorityCount}
+          </span>
         </span>
         <span className="text-content-muted">•</span>
-        <span className="text-severity-low flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-severity-low"></span>
-          Minor {summary.reviewCount}
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          <span className={summary.reviewCount > 0 ? 'text-content-primary font-medium' : 'text-content-muted'}>
+            Minor {summary.reviewCount}
+          </span>
         </span>
       </div>
 
-      {/* 3. Craft DNA Radar Spectrum */}
+      {/* 3. Craft Architecture Balance Strip */}
       {summary.categoryScores && (
         <CraftRadar
           scores={summary.categoryScores}
@@ -106,7 +124,7 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
           <button
             onClick={onPrev}
             disabled={currentIndex <= 0}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-content-secondary bg-surface-raised hover:bg-surface-overlay hover:text-content-primary border border-border rounded-xs transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-content-secondary bg-surface-raised hover:bg-surface-overlay hover:text-white border border-border-subtle rounded-sm transition-colors disabled:opacity-30 disabled:pointer-events-none"
           >
             <ChevronUp size={12} />
             <span>Prev</span>
@@ -119,7 +137,7 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
           <button
             onClick={onNext}
             disabled={currentIndex >= totalFiltered - 1}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-content-secondary bg-surface-raised hover:bg-surface-overlay hover:text-content-primary border border-border rounded-xs transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-content-secondary bg-surface-raised hover:bg-surface-overlay hover:text-white border border-border-subtle rounded-sm transition-colors disabled:opacity-30 disabled:pointer-events-none"
           >
             <span>Next</span>
             <ChevronDown size={12} />
@@ -127,7 +145,7 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
         </div>
       )}
 
-      {/* 5. Category Filter Chips */}
+      {/* 5. Category Filter Chips (Disciplined Neutral Pills) */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
         {categories.map((cat) => {
           const isActive = activeCategory === cat.id;
@@ -137,8 +155,8 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
               onClick={() => onSelectCategory(cat.id)}
               className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-all ${
                 isActive
-                  ? 'bg-accent text-white border border-accent-light shadow-sm'
-                  : 'bg-surface-raised border border-border text-content-secondary hover:text-content-primary hover:border-border-strong'
+                  ? 'bg-surface-raised text-white border border-border-strong shadow-xs font-semibold'
+                  : 'bg-surface-inset border border-border-subtle text-content-secondary hover:text-white'
               }`}
             >
               {cat.label} {cat.count}

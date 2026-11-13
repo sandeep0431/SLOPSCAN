@@ -49,8 +49,8 @@ export const AuditTab: React.FC<AuditTabProps> = ({
         <div
           key={issue.id}
           ref={(el) => { cardRefs.current[idx] = el; }}
-          className={`transition-all rounded-md ${
-            idx === currentIndex ? 'ring-1 ring-accent' : ''
+          className={`transition-all rounded-lg ${
+            idx === currentIndex ? 'border-border-strong' : ''
           }`}
         >
           <FindingCard

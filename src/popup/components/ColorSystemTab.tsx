@@ -28,11 +28,11 @@ export const ColorSystemTab: React.FC<ColorSystemTabProps> = ({ colorSystem }) =
       {/* 1. Context Archetype & Brand Identity Header */}
       <div className="bg-surface border border-border rounded-lg p-3.5 shadow-card space-y-2.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-content-primary">
-            <Palette size={14} className="text-cyan-400" />
+          <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+            <Palette size={14} className="text-teal-400" />
             <span>Product Archetype</span>
           </div>
-          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent/20 text-accent-light border border-accent/40">
+          <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-sm bg-surface-inset text-content-secondary border border-border-subtle">
             {productContext}
           </span>
         </div>
@@ -45,9 +45,9 @@ export const ColorSystemTab: React.FC<ColorSystemTabProps> = ({ colorSystem }) =
                 style={{ backgroundColor: primaryBrand.normalizedHex }}
               />
               <div>
-                <div className="text-[11px] font-bold text-content-primary flex items-center gap-1.5">
+                <div className="text-[11px] font-bold text-white flex items-center gap-1.5">
                   <span>Preserved Brand Accent</span>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-xs bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-semibold">
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-sm bg-teal-950/60 text-teal-300 border border-teal-800/40 font-semibold">
                     PROTECTED
                   </span>
                 </div>
@@ -59,9 +59,9 @@ export const ColorSystemTab: React.FC<ColorSystemTabProps> = ({ colorSystem }) =
 
             <button
               onClick={() => handleCopy('--color-primary', primaryBrand.normalizedHex)}
-              className="text-[10px] font-mono px-2 py-1 rounded-xs bg-surface-raised hover:bg-surface-overlay text-content-secondary hover:text-content-primary border border-border flex items-center gap-1 transition-colors"
+              className="text-[10px] font-mono px-2 py-1 rounded-sm bg-surface-raised hover:bg-surface-overlay text-content-secondary hover:text-white border border-border-subtle flex items-center gap-1 transition-colors"
             >
-              {copiedToken === '--color-primary' ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
+              {copiedToken === '--color-primary' ? <Check size={10} className="text-teal-300" /> : <Copy size={10} />}
               <span>{copiedToken === '--color-primary' ? 'Copied' : 'Copy'}</span>
             </button>
           </div>
@@ -70,7 +70,7 @@ export const ColorSystemTab: React.FC<ColorSystemTabProps> = ({ colorSystem }) =
 
       {/* 2. Color Balance & Surface Distribution */}
       <div className="bg-surface border border-border rounded-lg p-3.5 shadow-card space-y-2">
-        <div className="flex items-center justify-between text-xs font-bold text-content-primary">
+        <div className="flex items-center justify-between text-xs font-bold text-white">
           <div className="flex items-center gap-1.5">
             <Layers size={13} className="text-content-muted" />
             <span>Surface Chroma Balance (60-30-10)</span>
@@ -81,19 +81,19 @@ export const ColorSystemTab: React.FC<ColorSystemTabProps> = ({ colorSystem }) =
         </div>
 
         {/* Visual Progress Bar */}
-        <div className="h-2.5 w-full bg-surface-inset rounded-full overflow-hidden flex border border-border-subtle">
+        <div className="h-2 w-full bg-surface-inset rounded-full overflow-hidden flex border border-border-subtle">
           <div
-            className="bg-slate-500 h-full"
+            className="bg-slate-600 h-full"
             style={{ width: `${distribution.neutralPercentage}%` }}
             title={`Neutral: ${distribution.neutralPercentage}%`}
           />
           <div
-            className="bg-cyan-500 h-full"
+            className="bg-teal-600 h-full"
             style={{ width: `${distribution.accentPercentage}%` }}
             title={`Accent: ${distribution.accentPercentage}%`}
           />
           <div
-            className="bg-purple-500 h-full"
+            className="bg-slate-700 h-full"
             style={{ width: `${distribution.decorativePercentage}%` }}
             title={`Decorative: ${distribution.decorativePercentage}%`}
           />
@@ -101,13 +101,13 @@ export const ColorSystemTab: React.FC<ColorSystemTabProps> = ({ colorSystem }) =
 
         <div className="flex items-center justify-between text-[10px] font-mono text-content-muted pt-1">
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-slate-500"></span> Neutral {distribution.neutralPercentage}%
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span> Neutral {distribution.neutralPercentage}%
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-cyan-500"></span> Accent {distribution.accentPercentage}%
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500"></span> Accent {distribution.accentPercentage}%
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-purple-500"></span> Deco {distribution.decorativePercentage}%
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span> Deco {distribution.decorativePercentage}%
           </span>
         </div>
       </div>

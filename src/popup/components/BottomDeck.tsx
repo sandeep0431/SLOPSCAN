@@ -46,13 +46,13 @@ export const BottomDeck: React.FC<BottomDeckProps> = ({
 
   return (
     <footer className="p-3 bg-surface border-t border-border space-y-2 select-none shadow-lg">
-      {/* 1. Primary Action: Full Fix Prompt */}
+      {/* 1. Primary Action: Full Fix Prompt (Soothing Teal matching PreScan) */}
       <button
         onClick={handleCopyFullPrompt}
-        className={`w-full py-2.5 px-3 rounded-md text-xs font-semibold flex items-center justify-center gap-2 transition-all border ${
+        className={`w-full py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all border ${
           copied
-            ? 'bg-emerald-600/90 text-white border-emerald-500 shadow-sm'
-            : 'bg-accent/20 hover:bg-accent/30 text-white border-accent/60 hover:border-accent active:scale-[0.99] shadow-subtle'
+            ? 'bg-teal-700 text-white border-teal-500 shadow-sm'
+            : 'bg-teal-800 hover:bg-teal-700 active:scale-[0.99] text-white border border-teal-600/60 shadow-md'
         }`}
       >
         {copied ? (
@@ -62,19 +62,19 @@ export const BottomDeck: React.FC<BottomDeckProps> = ({
           </>
         ) : (
           <>
-            <Copy size={13} className="text-accent-light" />
+            <Copy size={13} className="text-teal-200" />
             <span>Full fix prompt</span>
           </>
         )}
       </button>
 
-      {/* 2. Secondary Exploration Actions */}
+      {/* 2. Secondary Exploration Actions (Clean Neutral Controls) */}
       {activeView !== 'audit' ? (
         <button
           onClick={() => onToggleView('audit')}
-          className="w-full py-2 px-3 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-colors border bg-surface-raised hover:bg-surface-overlay text-content-primary border-border"
+          className="w-full py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors border bg-surface-inset hover:bg-surface-raised text-content-primary border-border-subtle"
         >
-          <ArrowLeft size={13} className="text-accent-light" />
+          <ArrowLeft size={13} className="text-teal-300" />
           <span>Back to Craft Findings</span>
         </button>
       ) : (
@@ -82,11 +82,11 @@ export const BottomDeck: React.FC<BottomDeckProps> = ({
           {/* Typography Inspector */}
           <button
             onClick={() => onToggleView('type')}
-            className="py-1.5 px-2.5 rounded-md text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors border bg-surface-raised/70 hover:bg-surface-raised text-content-secondary hover:text-content-primary border-border"
+            className="py-1.5 px-2.5 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors border bg-surface-inset hover:bg-surface-raised text-content-secondary hover:text-white border-border-subtle"
           >
             <Type size={12} className="text-content-muted" />
             <span>Typography</span>
-            <span className="text-[9px] px-1 py-0.2 rounded-full bg-accent/30 text-accent-light font-mono font-bold">
+            <span className="text-[10px] px-1.5 py-0.2 rounded-sm bg-surface-raised text-content-muted font-mono">
               {scanResult.typography.distinctFamilies.length}
             </span>
           </button>
@@ -94,17 +94,10 @@ export const BottomDeck: React.FC<BottomDeckProps> = ({
           {/* Color Intelligence Inspector */}
           <button
             onClick={() => onToggleView('color')}
-            className="py-1.5 px-2.5 rounded-md text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors border bg-surface-raised/70 hover:bg-surface-raised text-content-secondary hover:text-content-primary border-border"
+            className="py-1.5 px-2.5 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors border bg-surface-inset hover:bg-surface-raised text-content-secondary hover:text-white border-border-subtle"
           >
-            <Palette size={12} className="text-cyan-400" />
+            <Palette size={12} className="text-teal-400" />
             <span>Color System</span>
-            {scanResult.colorSystem?.likelyBrandColors?.length > 0 && (
-              <span
-                className="w-2 h-2 rounded-full shrink-0 border border-white/40"
-                style={{ backgroundColor: scanResult.colorSystem.likelyBrandColors[0].normalizedHex }}
-                title="Preserved Brand Accent"
-              />
-            )}
           </button>
         </div>
       )}
@@ -112,11 +105,11 @@ export const BottomDeck: React.FC<BottomDeckProps> = ({
       {/* 3. Tertiary Action: Download JSON Report */}
       <button
         onClick={handleDownloadReport}
-        className="w-full py-1.5 px-3 rounded-md text-[11px] font-medium text-content-muted hover:text-content-secondary flex items-center justify-center gap-1.5 hover:bg-surface-raised transition-colors"
+        className="w-full py-1.5 px-3 rounded-md text-[11px] font-medium text-content-muted hover:text-content-secondary flex items-center justify-center gap-1.5 hover:bg-surface-inset transition-colors"
       >
         {downloaded ? (
           <>
-            <Check size={12} className="text-severity-mint" />
+            <Check size={12} className="text-teal-300" />
             <span>Report Downloaded</span>
           </>
         ) : (

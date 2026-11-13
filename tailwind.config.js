@@ -19,7 +19,7 @@ export default {
           subtle: '#171D2D',
           DEFAULT: '#1E2538',
           strong: '#2D3752',
-          focus: '#6366F1',
+          focus: '#0F766E',
         },
         content: {
           primary: '#F8FAFC',
@@ -27,10 +27,10 @@ export default {
           muted: '#64748B',
         },
         accent: {
-          DEFAULT: '#6366F1',
-          hover: '#4F46E5',
-          light: '#818CF8',
-          glow: 'rgba(99, 102, 241, 0.25)',
+          DEFAULT: '#115E59',
+          hover: '#0F766E',
+          light: '#2DD4BF',
+          glow: 'rgba(17, 94, 89, 0.25)',
         },
         severity: {
           high: '#F87171',

@@ -12,58 +12,46 @@ export const CraftRadar: React.FC<CraftRadarProps> = ({
   activeCategory,
   onSelectCategory,
 }) => {
-  const dimensions: { id: Category; label: string; icon: string }[] = [
-    { id: 'surfaces', label: 'Surfaces', icon: '🎨' },
-    { id: 'spacing', label: 'Spacing', icon: '📐' },
-    { id: 'typography', label: 'Type', icon: '🔤' },
-    { id: 'components', label: 'Components', icon: '🧩' },
-    { id: 'copy', label: 'Copy', icon: '💬' },
+  const dimensions: { id: Category; label: string }[] = [
+    { id: 'surfaces', label: 'Surfaces' },
+    { id: 'spacing', label: 'Spacing' },
+    { id: 'typography', label: 'Type' },
+    { id: 'components', label: 'Geometry' },
+    { id: 'copy', label: 'Copy' },
   ];
 
   return (
-    <div className="bg-surface-inset border border-border-subtle rounded-md p-2.5 space-y-2">
+    <div className="bg-surface-inset border border-border-subtle rounded-md p-2 space-y-1.5 select-none">
       <div className="flex items-center justify-between text-[10px] font-mono text-content-muted">
-        <span className="uppercase tracking-wider font-semibold">Craft DNA Radar</span>
-        <span>Balance Metric</span>
+        <span className="uppercase tracking-wider font-semibold">Craft Architecture Balance</span>
+        <span>Standard 100</span>
       </div>
 
       <div className="grid grid-cols-5 gap-1.5">
         {dimensions.map((dim) => {
           const score = scores[dim.id] ?? 100;
           const isSelected = activeCategory === dim.id;
-
-          let colorClass = 'text-emerald-400';
-          let barBg = 'bg-emerald-500';
-          if (score < 75) {
-            colorClass = 'text-severity-high';
-            barBg = 'bg-severity-high';
-          } else if (score < 90) {
-            colorClass = 'text-severity-medium';
-            barBg = 'bg-severity-medium';
-          }
+          const isDeducted = score < 95;
 
           return (
             <button
               key={dim.id}
               onClick={() => onSelectCategory(isSelected ? 'all' : dim.id)}
-              className={`p-1.5 rounded-xs border text-left transition-all ${
+              className={`py-1 px-1.5 rounded-sm border text-left transition-all ${
                 isSelected
-                  ? 'bg-surface-raised border-accent shadow-sm'
-                  : 'bg-surface/50 border-border-subtle hover:border-border hover:bg-surface-raised'
+                  ? 'bg-surface-raised border-border-strong text-white'
+                  : 'bg-surface/40 border-border-subtle hover:border-border-strong hover:bg-surface-raised text-content-secondary'
               }`}
             >
-              <div className="text-[10px] font-medium text-content-secondary truncate flex items-center gap-1">
-                <span>{dim.icon}</span>
-                <span className="truncate">{dim.label}</span>
+              <div className="text-[10px] font-medium truncate text-content-muted">
+                {dim.label}
               </div>
-              <div className={`text-[12px] font-bold font-mono mt-0.5 ${colorClass}`}>
+              <div
+                className={`text-[11px] font-mono font-bold mt-0.5 ${
+                  isDeducted ? 'text-amber-300/90' : 'text-content-primary'
+                }`}
+              >
                 {score}%
-              </div>
-              <div className="h-1 w-full bg-canvas rounded-full mt-1 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${barBg}`}
-                  style={{ width: `${score}%` }}
-                ></div>
               </div>
             </button>
           );
@@ -72,4 +60,3 @@ export const CraftRadar: React.FC<CraftRadarProps> = ({
     </div>
   );
 };
-
