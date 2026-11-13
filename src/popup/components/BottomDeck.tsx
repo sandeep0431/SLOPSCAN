@@ -106,3 +106,4 @@ export const BottomDeck: React.FC<BottomDeckProps> = ({
     </footer>
   );
 };
+

@@ -19,17 +19,14 @@ export const R050_EverythingIsAPill: Rule = {
     for (const el of context.elements) {
       if (el.rect.width < 40 || el.rect.height < 20) continue;
       const r = parseRadius(el.computedStyle.borderRadius);
-      // Pill definition: radius >= height / 2 or >= 999
       const isPill = r >= 999 || (el.rect.height > 0 && r >= el.rect.height / 2 - 2);
 
       if (isPill) {
-        // Exempt avatar images
         if (el.tagName === 'IMG' && Math.abs(el.rect.width - el.rect.height) < 8) continue;
         pillElements.push({ id: el.id, selector: el.selector, section: el.sectionName });
       }
     }
 
-    // If 6 or more unrelated components are pills
     if (pillElements.length >= 6) {
       const sample = pillElements.slice(0, 3);
       return [
@@ -42,6 +39,10 @@ export const R050_EverythingIsAPill: Rule = {
           confidence: 'high',
           evidence: `${pillElements.length} separate elements use extreme pill border radii (>= 9999px / 50% height).`,
           recommendation: 'Use restrained border radii (4px, 6px, or 8px) for structural containers and inputs. Reserve full pill geometry for standalone micro-tags.',
+          diff: {
+            remove: 'border-radius: 9999px; /* or rounded-full */',
+            add: 'border-radius: 6px; /* restrained interactive radius */',
+          },
           selector: sample[0]?.selector,
           section: sample[0]?.section || 'Components',
           elementIds: pillElements.map((p) => p.id),
@@ -81,6 +82,10 @@ export const R051_InconsistentRadiusSystem: Rule = {
           confidence: 'medium',
           evidence: `Interface mixes ${radii.size} distinct border-radius values: ${sorted.map((r) => r + 'px').join(', ')}`,
           recommendation: 'Consolidate to a 2–3 tier radius token scale (e.g. 4px for controls, 8px for cards, 12px for modal panels).',
+          diff: {
+            remove: `border-radius: ${sorted.slice(0, 4).join('px, ')}px;`,
+            add: 'border-radius: 6px (controls), 10px (cards);',
+          },
           section: 'Design Tokens',
           elementIds: [],
         },

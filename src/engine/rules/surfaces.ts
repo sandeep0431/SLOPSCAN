@@ -1,9 +1,7 @@
 import type { Rule, ScanContext, Issue } from '../../types/index.ts';
 
-// Helper to check if color has saturation (not purely white/black/gray/transparent)
 function isSaturatedColor(colorStr: string): boolean {
   if (!colorStr || colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)') return false;
-  // Match rgb or rgba: rgb(r, g, b)
   const rgbMatch = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
   if (rgbMatch) {
     const r = parseInt(rgbMatch[1], 10);
@@ -11,12 +9,10 @@ function isSaturatedColor(colorStr: string): boolean {
     const b = parseInt(rgbMatch[3], 10);
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    // If very dark (e.g. slate-900 rgb(15, 23, 42)) or very light neutral, it is a neutral surface, not an accent
     if (max < 50 || min > 240) return false;
     const delta = max - min;
     return delta > 30;
   }
-  // Hex colors
   const hexMatch = colorStr.match(/#([0-9a-f]{3,8})/i);
   if (hexMatch) {
     let hex = hexMatch[1];
@@ -28,14 +24,13 @@ function isSaturatedColor(colorStr: string): boolean {
     const b = parseInt(hex.substring(4, 6), 16);
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    return max - min > 25 && max > 30 && min < 240;
+    if (max < 50 || min > 240) return false;
+    return max - min > 30;
   }
-  // Check common color names or hsl
   if (colorStr.includes('hsl(')) return true;
   return false;
 }
 
-// R001: Hue Gradient Backgrounds
 export const R001_HueGradient: Rule = {
   id: 'R001',
   name: 'Hue Gradient',
@@ -54,14 +49,10 @@ export const R001_HueGradient: Rule = {
         bg.includes('radial-gradient') ||
         bg.includes('conic-gradient')
       ) {
-        // Exclude small indicators/avatars
         if (el.rect.width < 20 || el.rect.height < 20) continue;
-
-        // Check if it's text clip (handled by R002)
         const clip = el.computedStyle.backgroundClip || el.computedStyle.webkitBackgroundClip;
         if (clip === 'text') continue;
 
-        // Flag if applied to cards, sections, or containers
         const isContainer = el.rect.width > 200 || el.rect.height > 100 || el.childrenCount > 1;
         if (isContainer) {
           issues.push({
@@ -73,6 +64,10 @@ export const R001_HueGradient: Rule = {
             confidence: 'high',
             evidence: `Element uses decorative gradient: ${bg.slice(0, 80)}...`,
             recommendation: 'Prefer quiet neutral surfaces. Reserve color and contrast for meaningful interaction boundaries.',
+            diff: {
+              remove: `background-image: ${bg.slice(0, 45)}...;`,
+              add: 'background-color: #0F172A; border: 1px solid #1E293B;',
+            },
             selector: el.selector,
             section: el.sectionName || 'Content',
             elementIds: [el.id],
@@ -84,7 +79,6 @@ export const R001_HueGradient: Rule = {
   },
 };
 
-// R002: Gradient Text
 export const R002_GradientText: Rule = {
   id: 'R002',
   name: 'Gradient Text',
@@ -108,6 +102,10 @@ export const R002_GradientText: Rule = {
           confidence: 'high',
           evidence: `Text "${textSample}" uses background-clip: text with ${bg.slice(0, 70)}...`,
           recommendation: 'Use solid, high-contrast text color. Gradient text reduces legibility and signals template-heavy aesthetics.',
+          diff: {
+            remove: '-webkit-background-clip: text; color: transparent;',
+            add: 'color: #F8FAFC; font-weight: 700;',
+          },
           selector: el.selector,
           section: el.sectionName || 'Typography',
           elementIds: [el.id],
@@ -118,7 +116,6 @@ export const R002_GradientText: Rule = {
   },
 };
 
-// R003: Colored Glow
 export const R003_ColoredGlow: Rule = {
   id: 'R003',
   name: 'Colored Glow',
@@ -132,9 +129,8 @@ export const R003_ColoredGlow: Rule = {
       const shadow = el.computedStyle.boxShadow;
       if (!shadow || shadow === 'none') continue;
 
-      // Parse box-shadow: X Y blur [spread] [color] OR color X Y blur [spread]
       const pxTokens = Array.from(shadow.matchAll(/(\d+)px/g)).map((m) => parseInt(m[1], 10));
-      const blurVal = pxTokens.length >= 3 ? pxTokens[2] : (pxTokens.length === 2 ? 0 : 0);
+      const blurVal = pxTokens.length >= 3 ? pxTokens[2] : 0;
 
       if (blurVal >= 16 && isSaturatedColor(shadow)) {
         issues.push({
@@ -146,6 +142,10 @@ export const R003_ColoredGlow: Rule = {
           confidence: 'high',
           evidence: `Element exhibits saturated box-shadow glow with ${blurVal}px blur: "${shadow.slice(0, 70)}..."`,
           recommendation: 'Remove colored neon glow. Establish hierarchy through crisp contrast, subtle 1px border stroke, and spacing.',
+          diff: {
+            remove: `box-shadow: ${shadow.slice(0, 45)}...;`,
+            add: 'box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); border: 1px solid #334155;',
+          },
           selector: el.selector,
           section: el.sectionName || 'Action',
           elementIds: [el.id],
@@ -156,7 +156,6 @@ export const R003_ColoredGlow: Rule = {
   },
 };
 
-// R004: Decorative Blurred Blob
 export const R004_BlurredBlob: Rule = {
   id: 'R004',
   name: 'Decorative Blurred Blob',
@@ -180,7 +179,11 @@ export const R004_BlurredBlob: Rule = {
             severity: 'medium',
             confidence: 'high',
             evidence: `Background decorative element with ${filter} positioned behind interface elements.`,
-            recommendation: 'Remove decorative blurred color blobs. Ground content on deliberate layout structures instead of ambient haze.',
+            recommendation: 'Remove decorative background blobs unless they serve a product-specific visual purpose.',
+            diff: {
+              remove: `filter: ${filter}; position: absolute;`,
+              add: 'display: none;',
+            },
             selector: el.selector,
             section: el.sectionName || 'Background',
             elementIds: [el.id],
@@ -192,8 +195,6 @@ export const R004_BlurredBlob: Rule = {
   },
 };
 
-
-// R005: Excessive Accent Usage
 export const R005_ExcessiveAccentUsage: Rule = {
   id: 'R005',
   name: 'Excessive Accent Usage',
@@ -232,6 +233,10 @@ export const R005_ExcessiveAccentUsage: Rule = {
           confidence: 'medium',
           evidence: `The saturated accent color ${color} is repeated across ${data.count} distinct elements (${data.selectors.join(', ')}).`,
           recommendation: 'Treat accent color as a scarce visual currency. Reserve it for primary CTAs and critical status indicators.',
+          diff: {
+            remove: `background-color: ${color};`,
+            add: 'background-color: #1E293B; border: 1px solid #334155; color: #F8FAFC;',
+          },
           selector: data.selectors[0],
           section: 'Global Surfaces',
           elementIds: data.elements,

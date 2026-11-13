@@ -124,6 +124,11 @@ export interface ScanContext {
   sections: SectionSnapshot[];
 }
 
+export interface IssueDiff {
+  remove: string;
+  add: string;
+}
+
 export interface Issue {
   id: string;
   ruleId: string;
@@ -133,6 +138,7 @@ export interface Issue {
   confidence: Confidence;
   evidence: string;
   recommendation: string;
+  diff?: IssueDiff;
   selector?: string;
   section?: string;
   elementIds: string[];
@@ -179,6 +185,7 @@ export interface AuditSummary {
   totalElementsScanned: number;
   visibleElementsCount: number;
   auditSignal: number;
+  categoryScores: Record<Category, number>;
 }
 
 export interface ScanResult {
@@ -195,5 +202,6 @@ export type ExtensionMessage =
   | { type: 'SCAN_PAGE_SUCCESS'; payload: ScanResult }
   | { type: 'SCAN_PAGE_ERROR'; error: string }
   | { type: 'INSPECT_ELEMENT'; selector: string; elementId: string; issue: Issue }
-  | { type: 'CLEAR_INSPECTION' };
+  | { type: 'CLEAR_INSPECTION' }
+  | { type: 'SIMULATE_FIX'; selector: string; elementId: string; issueId: string; ruleId: string; active: boolean };
 

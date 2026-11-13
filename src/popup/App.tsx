@@ -3,12 +3,14 @@ import { ScanResult, Issue, ExtensionMessage, Category } from '../types/index.ts
 import { Header } from './components/Header.tsx';
 import { SummaryStrip } from './components/SummaryStrip.tsx';
 import { AuditTab } from './components/AuditTab.tsx';
+import { SectionMapView } from './components/SectionMapView.tsx';
 import { TypographyTab } from './components/TypographyTab.tsx';
 import { BottomDeck } from './components/BottomDeck.tsx';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [activeView, setActiveView] = useState<'audit' | 'type' | 'fixplan'>('audit');
+  const [viewMode, setViewMode] = useState<'feed' | 'spatial'>('feed');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
@@ -87,6 +89,26 @@ export const App: React.FC = () => {
       chrome.tabs.sendMessage(tab.id, message);
     } catch (err) {
       console.warn('[SlopScan] Failed to send inspection message:', err);
+    }
+  };
+
+  const handleSimulateFix = async (issue: Issue, active: boolean) => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab || !tab.id) return;
+
+      const message: ExtensionMessage = {
+        type: 'SIMULATE_FIX',
+        selector: issue.selector || '',
+        elementId: issue.elementIds[0] || '',
+        issueId: issue.id,
+        ruleId: issue.ruleId,
+        active,
+      };
+
+      chrome.tabs.sendMessage(tab.id, message);
+    } catch (err) {
+      console.warn('[SlopScan] Failed to send simulation message:', err);
     }
   };
 
@@ -174,7 +196,7 @@ export const App: React.FC = () => {
       {/* 2. Main Content & Summary */}
       {scanResult ? (
         <>
-          {/* Summary Strip: Score + Pagination + Category Chips */}
+          {/* Summary Strip: Score + Radar + Pagination + Category Chips */}
           <SummaryStrip
             summary={scanResult.summary}
             categories={categoryFilters}
@@ -184,16 +206,27 @@ export const App: React.FC = () => {
             totalFiltered={filteredIssues.length}
             onPrev={handlePrev}
             onNext={handleNext}
+            viewMode={viewMode}
+            onToggleViewMode={setViewMode}
           />
 
           {/* 3. Scrollable Viewport */}
           <main className="flex-1 overflow-y-auto">
             {activeView === 'audit' ? (
-              <AuditTab
-                issues={filteredIssues}
-                currentIndex={currentIndex}
-                onInspect={handleInspect}
-              />
+              viewMode === 'feed' ? (
+                <AuditTab
+                  issues={filteredIssues}
+                  currentIndex={currentIndex}
+                  onInspect={handleInspect}
+                  onSimulateFix={handleSimulateFix}
+                />
+              ) : (
+                <SectionMapView
+                  issues={filteredIssues}
+                  onInspect={handleInspect}
+                  onSimulateFix={handleSimulateFix}
+                />
+              )
             ) : (
               <TypographyTab typography={scanResult.typography} />
             )}

@@ -1,7 +1,7 @@
 import { ExtensionMessage } from '../types/index.ts';
 import { collectPageSnapshot, collectVisibleElements } from './domCollector.ts';
 import { detectSections } from './sectionDetector.ts';
-import { inspectElementOnPage, clearInspectionOverlay } from './inspectorOverlay.ts';
+import { inspectElementOnPage, clearInspectionOverlay, toggleSimulateFix } from './inspectorOverlay.ts';
 import { runAudit } from '../engine/index.ts';
 
 console.log('[SlopScan] Content script injected and active.');
@@ -45,6 +45,11 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
     return false;
   }
 
+  if (message.type === 'SIMULATE_FIX') {
+    toggleSimulateFix(message.selector, message.elementId, message.ruleId, message.active);
+    sendResponse({ status: 'ok' });
+    return false;
+  }
+
   return false;
 });
-

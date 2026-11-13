@@ -195,3 +195,61 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+
+// In-Page Live Fix Simulation State
+const simulatedElementsMap = new Map<string, string>(); // elementId/selector -> original style attribute
+
+export function toggleSimulateFix(
+  selector: string,
+  elementId: string,
+  ruleId: string,
+  active: boolean
+): void {
+  let target: HTMLElement | null = document.querySelector(`[data-slopscan-id="${elementId}"]`);
+  if (!target && selector) {
+    try {
+      target = document.querySelector(selector);
+    } catch {
+      // fallback
+    }
+  }
+
+  if (!target) return;
+
+  const key = elementId || selector;
+
+  if (active) {
+    // Save original inline style if not already saved
+    if (!simulatedElementsMap.has(key)) {
+      simulatedElementsMap.set(key, target.getAttribute('style') || '');
+    }
+
+    // Apply clean craft override
+    if (ruleId === 'R001') {
+      target.style.backgroundImage = 'none';
+      target.style.backgroundColor = '#1E293B';
+      target.style.border = '1px solid #334155';
+    } else if (ruleId === 'R002') {
+      target.style.webkitBackgroundClip = 'unset';
+      target.style.backgroundClip = 'unset';
+      target.style.color = '#F8FAFC';
+      target.style.fontWeight = '700';
+    } else if (ruleId === 'R003') {
+      target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.3)';
+    } else if (ruleId === 'R004') {
+      target.style.display = 'none';
+    } else if (ruleId === 'R050') {
+      target.style.borderRadius = '6px';
+    } else if (ruleId === 'R070') {
+      target.style.animation = 'none';
+    }
+  } else {
+    // Restore original style
+    if (simulatedElementsMap.has(key)) {
+      const original = simulatedElementsMap.get(key) || '';
+      target.setAttribute('style', original);
+      simulatedElementsMap.delete(key);
+    }
+  }
+}

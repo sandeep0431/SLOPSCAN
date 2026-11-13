@@ -1,9 +1,21 @@
-import type { Issue, AuditSummary, ScanContext } from '../types/index.ts';
+import type { Issue, AuditSummary, ScanContext, Category } from '../types/index.ts';
 
 export function calculateSummary(issues: Issue[], context: ScanContext): AuditSummary {
   let highPriorityCount = 0;
   let mediumPriorityCount = 0;
   let reviewCount = 0;
+
+  // Track category deductions
+  const categoryScores: Record<Category, number> = {
+    surfaces: 100,
+    spacing: 100,
+    typography: 100,
+    components: 100,
+    icons: 100,
+    copy: 100,
+    layout: 100,
+    motion: 100,
+  };
 
   // Track penalty with cluster protection (max penalty per rule type)
   const penaltyByRule = new Map<string, number>();
@@ -12,6 +24,9 @@ export function calculateSummary(issues: Issue[], context: ScanContext): AuditSu
     if (issue.severity === 'high') highPriorityCount++;
     else if (issue.severity === 'medium') mediumPriorityCount++;
     else reviewCount++;
+
+    const catPenalty = issue.severity === 'high' ? 12 : issue.severity === 'medium' ? 7 : 4;
+    categoryScores[issue.category] = Math.max(35, categoryScores[issue.category] - catPenalty);
 
     // Severity base
     let baseWeight = 2;
@@ -46,5 +61,6 @@ export function calculateSummary(issues: Issue[], context: ScanContext): AuditSu
     totalElementsScanned: context.page.totalElementsCount,
     visibleElementsCount: context.page.visibleElementsCount,
     auditSignal: rawScore,
+    categoryScores,
   };
 }

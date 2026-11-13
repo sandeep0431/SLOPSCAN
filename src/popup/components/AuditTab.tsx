@@ -7,12 +7,14 @@ interface AuditTabProps {
   issues: Issue[];
   currentIndex: number;
   onInspect: (issue: Issue) => void;
+  onSimulateFix?: (issue: Issue, active: boolean) => void;
 }
 
 export const AuditTab: React.FC<AuditTabProps> = ({
   issues,
   currentIndex,
   onInspect,
+  onSimulateFix,
 }) => {
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -27,7 +29,7 @@ export const AuditTab: React.FC<AuditTabProps> = ({
 
   if (issues.length === 0) {
     return (
-      <div className="p-6 text-center my-8">
+      <div className="p-6 text-center my-8 select-none">
         <div className="w-10 h-10 rounded-full bg-emerald-950/60 border border-emerald-800/40 flex items-center justify-center mx-auto mb-3">
           <CheckCircle2 size={20} className="text-emerald-400" />
         </div>
@@ -51,7 +53,12 @@ export const AuditTab: React.FC<AuditTabProps> = ({
             idx === currentIndex ? 'ring-1 ring-accent' : ''
           }`}
         >
-          <FindingCard issue={issue} index={idx} onInspect={onInspect} />
+          <FindingCard
+            issue={issue}
+            index={idx}
+            onInspect={onInspect}
+            onSimulateFix={onSimulateFix}
+          />
         </div>
       ))}
     </div>
