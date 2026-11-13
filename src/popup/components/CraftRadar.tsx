@@ -72,3 +72,4 @@ export const CraftRadar: React.FC<CraftRadarProps> = ({
     </div>
   );
 };
+

@@ -110,3 +110,4 @@ export const SectionMapView: React.FC<SectionMapViewProps> = ({
     </div>
   );
 };
+
