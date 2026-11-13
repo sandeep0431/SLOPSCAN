@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ScanResult, Issue, ExtensionMessage, Category } from '../types/index.ts';
 import { Header } from './components/Header.tsx';
+import { PreScanView } from './components/PreScanView.tsx';
 import { SummaryStrip } from './components/SummaryStrip.tsx';
 import { AuditTab } from './components/AuditTab.tsx';
 import { SectionMapView } from './components/SectionMapView.tsx';
@@ -15,8 +16,23 @@ export const App: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [isScanning, setIsScanning] = useState<boolean>(true);
+  const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [tabDomain, setTabDomain] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+
+  // Retrieve current active tab's domain on mount
+  useEffect(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+      if (tab?.url) {
+        try {
+          const urlObj = new URL(tab.url);
+          setTabDomain(urlObj.hostname);
+        } catch {
+          setTabDomain('');
+        }
+      }
+    });
+  }, []);
 
   const performScan = useCallback(async () => {
     setIsScanning(true);
@@ -71,9 +87,16 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
+  const handleStartScan = (mode: 'full' | 'colors' | 'typography') => {
+    if (mode === 'colors') {
+      setActiveCategory('colors');
+    } else if (mode === 'typography') {
+      setActiveCategory('typography');
+    } else {
+      setActiveCategory('all');
+    }
     performScan();
-  }, [performScan]);
+  };
 
   const handleInspect = async (issue: Issue) => {
     try {
@@ -164,96 +187,108 @@ export const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[600px] max-h-[600px] bg-canvas text-content-primary overflow-hidden">
-      {/* 1. Header */}
-      <Header
-        page={scanResult?.page}
-        isScanning={isScanning}
-        onRescan={performScan}
-      />
-
-      {/* Loading Progress Bar */}
-      {isScanning && (
-        <div className="h-0.5 w-full bg-surface-raised overflow-hidden">
-          <div className="h-full bg-accent animate-pulse w-full"></div>
-        </div>
-      )}
-
-      {/* Error Notice */}
-      {error && (
-        <div className="p-3 bg-red-950/40 border-b border-red-800/40 flex items-start gap-2">
-          <AlertCircle size={14} className="text-severity-high mt-0.5 shrink-0" />
-          <div className="flex-1 text-[11px]">
-            <span className="font-semibold text-severity-high">Notice: </span>
-            <span className="text-content-secondary">{error}</span>
-            <button
-              onClick={performScan}
-              className="mt-1 block text-[10px] text-content-primary underline hover:text-white flex items-center gap-1"
-            >
-              <RefreshCw size={9} /> Retry Scan
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Main Content & Summary */}
-      {scanResult ? (
+      {/* If No Scan has run yet, show the PreScan Landing Screen */}
+      {!scanResult && !isScanning ? (
+        <PreScanView
+          onStartScan={handleStartScan}
+          isScanning={isScanning}
+          pageDomain={tabDomain}
+        />
+      ) : (
         <>
-          {/* Summary Strip: Score + Radar + Pagination + Category Chips */}
-          <SummaryStrip
-            summary={scanResult.summary}
-            categories={categoryFilters}
-            activeCategory={activeCategory}
-            onSelectCategory={handleSelectCategory}
-            currentIndex={currentIndex}
-            totalFiltered={filteredIssues.length}
-            onPrev={handlePrev}
-            onNext={handleNext}
-            viewMode={viewMode}
-            onToggleViewMode={setViewMode}
+          {/* 1. Header with Back button to scan launcher */}
+          <Header
+            page={scanResult?.page}
+            isScanning={isScanning}
+            onRescan={performScan}
+            onBackToStart={() => setScanResult(null)}
           />
 
-          {/* 3. Scrollable Viewport */}
-          <main className="flex-1 overflow-y-auto">
-            {activeView === 'audit' ? (
-              viewMode === 'feed' ? (
-                <AuditTab
-                  issues={filteredIssues}
-                  currentIndex={currentIndex}
-                  onInspect={handleInspect}
-                  onSimulateFix={handleSimulateFix}
-                />
-              ) : (
-                <SectionMapView
-                  issues={filteredIssues}
-                  onInspect={handleInspect}
-                  onSimulateFix={handleSimulateFix}
-                />
-              )
-            ) : activeView === 'type' ? (
-              <TypographyTab typography={scanResult.typography} />
-            ) : (
-              <ColorSystemTab colorSystem={scanResult.colorSystem} />
-            )}
-          </main>
+          {/* Loading Progress Bar */}
+          {isScanning && (
+            <div className="h-0.5 w-full bg-surface-raised overflow-hidden">
+              <div className="h-full bg-accent animate-pulse w-full"></div>
+            </div>
+          )}
 
-          {/* 4. Bottom Action Deck */}
-          <BottomDeck
-            scanResult={scanResult}
-            activeView={activeView}
-            onToggleView={setActiveView}
-          />
+          {/* Error Notice */}
+          {error && (
+            <div className="p-3 bg-red-950/40 border-b border-red-800/40 flex items-start gap-2">
+              <AlertCircle size={14} className="text-severity-high mt-0.5 shrink-0" />
+              <div className="flex-1 text-[11px]">
+                <span className="font-semibold text-severity-high">Notice: </span>
+                <span className="text-content-secondary">{error}</span>
+                <button
+                  onClick={performScan}
+                  className="mt-1 block text-[10px] text-content-primary underline hover:text-white flex items-center gap-1"
+                >
+                  <RefreshCw size={9} /> Retry Scan
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Main Content & Summary */}
+          {scanResult ? (
+            <>
+              {/* Summary Strip: Score + Radar + Pagination + Category Chips */}
+              <SummaryStrip
+                summary={scanResult.summary}
+                categories={categoryFilters}
+                activeCategory={activeCategory}
+                onSelectCategory={handleSelectCategory}
+                currentIndex={currentIndex}
+                totalFiltered={filteredIssues.length}
+                onPrev={handlePrev}
+                onNext={handleNext}
+                viewMode={viewMode}
+                onToggleViewMode={setViewMode}
+              />
+
+              {/* 3. Scrollable Viewport */}
+              <main className="flex-1 overflow-y-auto">
+                {activeView === 'audit' ? (
+                  viewMode === 'feed' ? (
+                    <AuditTab
+                      issues={filteredIssues}
+                      currentIndex={currentIndex}
+                      onInspect={handleInspect}
+                      onSimulateFix={handleSimulateFix}
+                    />
+                  ) : (
+                    <SectionMapView
+                      issues={filteredIssues}
+                      onInspect={handleInspect}
+                      onSimulateFix={handleSimulateFix}
+                    />
+                  )
+                ) : activeView === 'type' ? (
+                  <TypographyTab typography={scanResult.typography} />
+                ) : (
+                  <ColorSystemTab colorSystem={scanResult.colorSystem} />
+                )}
+              </main>
+
+              {/* 4. Bottom Action Deck */}
+              <BottomDeck
+                scanResult={scanResult}
+                activeView={activeView}
+                onToggleView={setActiveView}
+              />
+            </>
+          ) : isScanning ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-8 h-8 rounded-full border-2 border-border border-t-accent animate-spin mb-3"></div>
+              <div className="text-xs font-semibold text-content-primary">
+                Auditing Interface Craft...
+              </div>
+              <div className="text-[11px] text-content-muted mt-1 max-w-[220px]">
+                Extracting computed styles, geometry, and design tokens.
+              </div>
+            </div>
+          ) : null}
         </>
-      ) : isScanning ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-8 h-8 rounded-full border-2 border-border border-t-accent animate-spin mb-3"></div>
-          <div className="text-xs font-semibold text-content-primary">
-            Auditing Interface Craft...
-          </div>
-          <div className="text-[11px] text-content-muted mt-1 max-w-[220px]">
-            Extracting computed styles, geometry, and design tokens.
-          </div>
-        </div>
-      ) : null}
+      )}
     </div>
   );
 };
