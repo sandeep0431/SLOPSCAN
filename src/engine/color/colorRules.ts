@@ -120,6 +120,10 @@ export const C003_WeakSurfaceHierarchy: Rule = {
   defaultSeverity: 'low',
   defaultConfidence: 'medium',
   run(context: ScanContext): Issue[] {
+    const productContext = inferProductContext(context);
+    // Creative portfolios and editorial designs deliberately use minimalist flat canvases
+    if (productContext.includes('Creative Portfolio') || productContext.includes('Editorial')) return [];
+
     const { usages } = extractPageColors(context);
     const bgUsages = usages.filter((u) => u.source === 'background' && u.isNeutral);
 
@@ -162,6 +166,18 @@ export const C004_LowContrastText: Rule = {
     const { elementBackgroundMap, elementColorMap } = extractPageColors(context);
     const lowContrastIssues: { el: any; ratio: number; fg: string; bg: string; displayText: string }[] = [];
 
+    // Detect if page has predominantly light text on a dark canvas
+    let lightTextCount = 0;
+    let totalTextCount = 0;
+    for (const el of context.elements.slice(0, 30)) {
+      if (el.text && el.text.trim().length >= 2) {
+        totalTextCount++;
+        const parsed = parseAndNormalizeColor(el.computedStyle.color);
+        if (parsed && parsed.luminance > 0.45) lightTextCount++;
+      }
+    }
+    const isPredominantlyDarkCanvas = totalTextCount >= 3 && lightTextCount / totalTextCount > 0.6;
+
     for (const el of context.elements) {
       const text = (el.directText || el.text || '').trim();
       // Guard: Ignore empty or trivial non-alphanumeric ghost text
@@ -176,6 +192,13 @@ export const C004_LowContrastText: Rule = {
       if (el.computedStyle.resolvedBackgroundColor) {
         const resolved = parseAndNormalizeColor(el.computedStyle.resolvedBackgroundColor);
         if (resolved) bg = resolved;
+      }
+
+      // If page is predominantly dark-themed, an element with light text (e.g. #E7E1D7) whose background
+      // erroneously defaulted to #FFFFFF due to transparent inheritance artifact must use the dark canvas!
+      if (isPredominantlyDarkCanvas && fg && fg.luminance > 0.45 && bg && bg.hex === '#FFFFFF') {
+        const darkCanvas = parseAndNormalizeColor('#0B0B0B');
+        if (darkCanvas) bg = darkCanvas;
       }
 
       if (fg && bg) {

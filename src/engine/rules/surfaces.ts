@@ -1,4 +1,5 @@
 import type { Rule, ScanContext, Issue, ElementSnapshot } from '../../types/index.ts';
+import { inferProductContext } from '../color/colorRoleAnalyzer.ts';
 
 function isSaturatedColor(colorStr: string): boolean {
   if (!colorStr || colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)') return false;
@@ -199,6 +200,10 @@ export const R004_BlurredBlob: Rule = {
   defaultSeverity: 'medium',
   defaultConfidence: 'high',
   run(context: ScanContext): Issue[] {
+    const productContext = inferProductContext(context);
+    // Portfolios/studios use photographic lighting / artistic portraits
+    if (productContext.includes('Creative Portfolio')) return [];
+
     const blobElements: ElementSnapshot[] = [];
     for (const el of context.elements) {
       const filter = el.computedStyle.filter || '';
@@ -253,6 +258,9 @@ export const R005_ExcessiveAccentUsage: Rule = {
   defaultSeverity: 'medium',
   defaultConfidence: 'medium',
   run(context: ScanContext): Issue[] {
+    const productContext = inferProductContext(context);
+    if (productContext.includes('Creative Portfolio')) return [];
+
     const accentMap = new Map<string, { count: number; elements: string[]; selectors: string[] }>();
 
     for (const el of context.elements) {

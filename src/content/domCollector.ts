@@ -49,7 +49,7 @@ const SVG_INNER_TAGS = new Set([
  */
 export function resolveActualBackgroundColor(el: Element): string {
   let curr: Element | null = el;
-  while (curr && curr !== document.documentElement) {
+  while (curr) {
     const style = window.getComputedStyle(curr);
     const bg = style.backgroundColor;
     if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
@@ -72,17 +72,41 @@ export function resolveActualBackgroundColor(el: Element): string {
     if (bodyBg && bodyBg !== 'transparent' && bodyBg !== 'rgba(0, 0, 0, 0)') {
       return bodyBg;
     }
+    const htmlBg = window.getComputedStyle(document.documentElement).backgroundColor;
+    if (htmlBg && htmlBg !== 'transparent' && htmlBg !== 'rgba(0, 0, 0, 0)') {
+      return htmlBg;
+    }
   } catch {
     // guarded
   }
 
-  // Fallback based on dark/light scheme
+  // Detect dark theme from body text color (if text is light/white/beige, canvas is dark)
+  let hasLightBodyText = false;
+  try {
+    const bodyColor = window.getComputedStyle(document.body).color;
+    const match = bodyColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (match) {
+      const r = parseInt(match[1], 10);
+      const g = parseInt(match[2], 10);
+      const b = parseInt(match[3], 10);
+      const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+      if (lum > 0.45) {
+        hasLightBodyText = true;
+      }
+    }
+  } catch {
+    // guarded
+  }
+
   const isDark =
+    hasLightBodyText ||
     window.matchMedia('(prefers-color-scheme: dark)').matches ||
     document.documentElement.classList.contains('dark') ||
-    document.body.classList.contains('dark');
+    document.body.classList.contains('dark') ||
+    document.documentElement.getAttribute('data-theme') === 'dark' ||
+    document.body.getAttribute('data-theme') === 'dark';
 
-  return isDark ? 'rgb(9, 11, 16)' : 'rgb(255, 255, 255)';
+  return isDark ? 'rgb(11, 11, 11)' : 'rgb(255, 255, 255)';
 }
 
 export function collectPageSnapshot(): PageSnapshot {

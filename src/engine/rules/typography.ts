@@ -1,4 +1,4 @@
-import type { Rule, ScanContext, Issue } from '../../types/index.ts';
+import type { Rule, ScanContext, Issue, ElementSnapshot } from '../../types/index.ts';
 
 function cleanFontFamily(font: string): string {
   if (!font) return 'sans-serif';
@@ -94,40 +94,50 @@ export const R021_TooManyFontSizes: Rule = {
 
 export const R024_UppercaseTrackedLabels: Rule = {
   id: 'R024',
-  name: 'Uppercase Tracked Labels',
+  name: 'Long all-caps text',
   category: 'typography',
-  description: 'Detects excessive all-caps uppercase labels with forced tracking.',
+  description: 'Flags long runs of uppercase text or forced uppercase tracking that reduce reading speed.',
   defaultSeverity: 'low',
   defaultConfidence: 'medium',
   run(context: ScanContext): Issue[] {
-    const issues: Issue[] = [];
+    const allCapsElements: ElementSnapshot[] = [];
     for (const el of context.elements) {
-      const text = el.directText.trim();
-      if (text.length > 3 && text.length < 35) {
+      const text = (el.directText || el.text).trim();
+      if (text.length >= 16) {
         const isUpper =
           el.computedStyle.textTransform === 'uppercase' ||
           (text === text.toUpperCase() && /[A-Z]/.test(text));
-        const spacing = parseFloat(el.computedStyle.letterSpacing);
 
-        if (isUpper && !isNaN(spacing) && spacing >= 2) {
-          issues.push({
-            id: `issue-${el.id}-r024`,
-            ruleId: 'R024',
-            category: 'typography',
-            title: 'Tracked Uppercase Label',
-            severity: 'low',
-            confidence: 'medium',
-            evidence: `Text "${text}" styled in uppercase with heavy letter-spacing: ${el.computedStyle.letterSpacing}.`,
-            recommendation: 'Use sentence case or title case. Restrict uppercase tracking to small category tags or table headers.',
-            selector: el.selector,
-            section: el.sectionName || 'Labels',
-            elementIds: [el.id],
-          });
-          if (issues.length >= 2) break;
+        if (isUpper) {
+          allCapsElements.push(el);
         }
       }
     }
-    return issues;
+
+    if (allCapsElements.length > 0) {
+      const sample = allCapsElements[0];
+      const sampleText = (sample.directText || sample.text).trim();
+      return [
+        {
+          id: 'issue-typo-r024',
+          ruleId: 'R024',
+          category: 'typography',
+          title: 'Long all-caps text',
+          severity: 'low',
+          confidence: 'medium',
+          evidence: `${sampleText.length} chars in all-caps: "${sampleText.slice(0, 30)}...". Long runs of uppercase text are harder and slower to read than sentence case.`,
+          recommendation: 'Use sentence case for long text and reserve all caps for short labels or badges.',
+          diff: {
+            remove: `${sampleText.slice(0, 25)}... (all-caps);`,
+            add: 'Convert to sentence case for comfortable reading;',
+          },
+          selector: sample.selector,
+          section: sample.sectionName || 'Typography',
+          elementIds: allCapsElements.map((e) => e.id),
+        },
+      ];
+    }
+    return [];
   },
 };
 

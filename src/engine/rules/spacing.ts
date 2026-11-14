@@ -1,4 +1,5 @@
 import type { Rule, ScanContext, Issue } from '../../types/index.ts';
+import { inferProductContext } from '../color/colorRoleAnalyzer.ts';
 
 const VALID_GRID_STEPS = new Set([0, 2, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96, 128]);
 
@@ -88,6 +89,10 @@ export const R012_InconsistentCardPadding: Rule = {
   defaultSeverity: 'medium',
   defaultConfidence: 'medium',
   run(context: ScanContext): Issue[] {
+    const productContext = inferProductContext(context);
+    // Asymmetric editorial portfolios intentionally use varied padding
+    if (productContext.includes('Creative Portfolio')) return [];
+
     const issues: Issue[] = [];
     const sectionCards = new Map<string, { id: string; selector: string; padding: string }[]>();
 
