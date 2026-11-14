@@ -1,4 +1,4 @@
-import type { Rule, ScanContext, Issue } from '../../types/index.ts';
+import type { Rule, ScanContext, Issue, ElementSnapshot } from '../../types/index.ts';
 
 export const R070_InfiniteDecorativeAnimation: Rule = {
   id: 'R070',
@@ -8,35 +8,44 @@ export const R070_InfiniteDecorativeAnimation: Rule = {
   defaultSeverity: 'medium',
   defaultConfidence: 'high',
   run(context: ScanContext): Issue[] {
-    const issues: Issue[] = [];
+    const animatedElements: ElementSnapshot[] = [];
     for (const el of context.elements) {
       if (
         el.computedStyle.animationIterationCount === 'infinite' &&
         el.computedStyle.animationName &&
         el.computedStyle.animationName !== 'none'
       ) {
-        // Exclude loading spinners, carousels or marquee text if intentional
+        // Exclude loading spinners, progress bars, or marquees
         if (/spin|load|progress/i.test(el.computedStyle.animationName)) continue;
+        if (el.selector && /(loading|progress|spinner)/i.test(el.selector)) continue;
 
         if (!el.isInteractive) {
-          issues.push({
-            id: `issue-${el.id}-r070`,
-            ruleId: 'R070',
-            category: 'motion',
-            title: 'Infinite Decorative Animation',
-            severity: 'medium',
-            confidence: 'high',
-            evidence: `Element executes continuous infinite animation "${el.computedStyle.animationName}" without user interaction.`,
-            recommendation: 'Eliminate continuous ambient motion. Reserve motion for purposeful state transitions and user feedback.',
-            selector: el.selector,
-            section: el.sectionName || 'Motion',
-            elementIds: [el.id],
-          });
-          if (issues.length >= 2) break;
+          animatedElements.push(el);
         }
       }
     }
-    return issues;
+
+    if (animatedElements.length > 0) {
+      const sample = animatedElements[0];
+      return [
+        {
+          id: 'issue-motion-r070',
+          ruleId: 'R070',
+          category: 'motion',
+          title: 'Infinite Decorative Animation',
+          severity: 'medium',
+          confidence: 'high',
+          evidence: animatedElements.length === 1
+            ? `Element executes continuous infinite animation "${sample.computedStyle.animationName}" without user interaction.`
+            : `${animatedElements.length} elements execute continuous infinite keyframe animations without user interaction.`,
+          recommendation: 'Eliminate continuous ambient motion. Reserve motion for purposeful state transitions and user feedback.',
+          selector: sample.selector,
+          section: sample.sectionName || 'Motion',
+          elementIds: animatedElements.map((e) => e.id),
+        },
+      ];
+    }
+    return [];
   },
 };
 
@@ -50,7 +59,7 @@ export const R071_LayoutAnimation: Rule = {
   defaultSeverity: 'medium',
   defaultConfidence: 'high',
   run(context: ScanContext): Issue[] {
-    const issues: Issue[] = [];
+    const layoutAnimated: ElementSnapshot[] = [];
     const layoutPropRegex = /\b(width|height|top|left|right|bottom|margin|padding)\b/i;
 
     for (const el of context.elements) {
@@ -58,23 +67,31 @@ export const R071_LayoutAnimation: Rule = {
       if (layoutPropRegex.test(transProp) && transProp !== 'all') {
         const dur = parseFloat(el.computedStyle.transitionDuration);
         if (dur > 0) {
-          issues.push({
-            id: `issue-${el.id}-r071`,
-            ruleId: 'R071',
-            category: 'motion',
-            title: 'Layout Property Transition',
-            severity: 'medium',
-            confidence: 'high',
-            evidence: `Element transitions layout property "${transProp}" which triggers browser layout recalculations.`,
-            recommendation: 'Transition performant GPU composited properties (transform: scale/translate and opacity) instead of dimensional properties.',
-            selector: el.selector,
-            section: el.sectionName || 'Components',
-            elementIds: [el.id],
-          });
-          if (issues.length >= 2) break;
+          layoutAnimated.push(el);
         }
       }
     }
-    return issues;
+
+    if (layoutAnimated.length > 0) {
+      const sample = layoutAnimated[0];
+      return [
+        {
+          id: 'issue-motion-r071',
+          ruleId: 'R071',
+          category: 'motion',
+          title: 'Layout Property Transition',
+          severity: 'medium',
+          confidence: 'high',
+          evidence: layoutAnimated.length === 1
+            ? `Element transitions layout property "${sample.computedStyle.transitionProperty}" which triggers browser layout recalculations.`
+            : `${layoutAnimated.length} elements transition layout properties, triggering browser layout recalculations.`,
+          recommendation: 'Transition performant GPU composited properties (transform: scale/translate and opacity) instead of dimensional properties.',
+          selector: sample.selector,
+          section: sample.sectionName || 'Components',
+          elementIds: layoutAnimated.map((e) => e.id),
+        },
+      ];
+    }
+    return [];
   },
 };

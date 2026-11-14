@@ -19,44 +19,27 @@ export function calculateSummary(issues: Issue[], context: ScanContext): AuditSu
   };
 
   const categoryDeductions = new Map<Category, number>();
-  const penaltyByRule = new Map<string, number>();
 
   for (const issue of issues) {
     if (issue.severity === 'high') highPriorityCount++;
     else if (issue.severity === 'medium') mediumPriorityCount++;
     else reviewCount++;
 
-    // Max penalty per rule cluster
-    const maxRuleCap = issue.severity === 'high' ? 8 : issue.severity === 'medium' ? 6 : 2;
-    const baseWeight = issue.severity === 'high' ? 8 : issue.severity === 'medium' ? 6 : 2;
-
-    // Confidence multiplier
-    let mult = 1.0;
-    if (issue.confidence === 'medium') mult = 0.75;
-    else if (issue.confidence === 'review') mult = 0.4;
-
-    const penalty = baseWeight * mult;
-    const current = penaltyByRule.get(issue.ruleId) || 0;
-
-    // Cluster cap: no single rule can deduct more than its cap
-    if (current < maxRuleCap) {
-      penaltyByRule.set(issue.ruleId, Math.min(maxRuleCap, current + penalty));
-    }
-
-    // Category deduction cap (max 12 pts deduction per category)
-    const catPenalty = issue.severity === 'high' ? 6 : issue.severity === 'medium' ? 4 : 2;
+    // Category deduction tracking (max 8 pts deduction per category)
+    const catPenalty = issue.severity === 'high' ? 6 : issue.severity === 'medium' ? 3.5 : 1.5;
     const currentCatDed = categoryDeductions.get(issue.category) || 0;
-    categoryDeductions.set(issue.category, Math.min(12, currentCatDed + catPenalty));
+    categoryDeductions.set(issue.category, Math.min(8, currentCatDed + catPenalty));
   }
 
-  // Update category scores with a soft floor so isolated variations don't crater category health
+  // Update category scores directly from category deductions
   for (const [cat, ded] of categoryDeductions.entries()) {
-    categoryScores[cat] = Math.max(88, Math.round(100 - ded));
+    categoryScores[cat] = Math.max(70, Math.round(100 - ded));
   }
 
+  // Total deductions is the sum of category deductions (ensures category caps protect overall score)
   let totalDeductions = 0;
-  for (const p of penaltyByRule.values()) {
-    totalDeductions += p;
+  for (const catDed of categoryDeductions.values()) {
+    totalDeductions += catDed;
   }
 
   const rawScore = Math.max(10, Math.round(100 - totalDeductions));
