@@ -28,31 +28,16 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
   viewMode,
   onToggleViewMode,
 }) => {
-  // Realistic, disciplined grade calculation
-  const getGradeBadge = (score: number) => {
-    if (score >= 90) return { label: 'Grade A', bg: 'bg-teal-950/50 text-teal-300 border-teal-800/40' };
-    if (score >= 80) return { label: 'Grade B', bg: 'bg-slate-800/50 text-slate-300 border-slate-700/40' };
-    if (score >= 70) return { label: 'Grade C', bg: 'bg-amber-950/50 text-amber-300 border-amber-800/40' };
-    return { label: 'Review', bg: 'bg-rose-950/50 text-rose-300 border-rose-800/40' };
-  };
-
-  const grade = getGradeBadge(summary.auditSignal);
-
   return (
     <div className="bg-surface px-4 pt-3 pb-2.5 border-b border-border space-y-2.5 select-none">
       {/* 1. Score & View Mode Switcher */}
       <div className="flex items-center justify-between">
-        <div className="flex items-baseline space-x-2">
+        <div className="flex items-baseline space-x-1.5">
           <span className="text-3xl font-extrabold tracking-tight text-white font-sans">
             {summary.auditSignal}
           </span>
           <span className="text-xs font-semibold text-content-muted">
             /100
-          </span>
-          <span
-            className={`text-[10px] font-mono px-2 py-0.5 rounded-sm border uppercase tracking-wider font-semibold ml-1 ${grade.bg}`}
-          >
-            {grade.label}
           </span>
         </div>
 
