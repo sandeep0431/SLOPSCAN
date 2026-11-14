@@ -260,4 +260,100 @@ test('Color Intelligence: Correctly preserves brand color and populates Fix Prom
   assert.ok(prompt.includes('Primary Brand Identity: #059669'));
   assert.ok(prompt.includes('--color-primary: #059669;'));
   assert.ok(prompt.includes('### Color System Guardrails'));
+  assert.ok(prompt.includes('### Token Application Mapping'));
+  assert.ok(prompt.includes('### Hex-to-Token Migration Table'));
+});
+
+test('Color Rules: C004 ignores empty ghost text and respects resolvedBackgroundColor (Tom de Koning bugfix)', () => {
+  // Scenario 1: Empty directText with whitespace - should NOT trigger C004
+  const ghostElement = createMockElement('ghost-text', {
+    text: '   ',
+    directText: '',
+    computedStyle: {
+      color: '#E7E1D7',
+      backgroundColor: 'transparent',
+    },
+  });
+
+  const res1 = runAudit(createMockContext([ghostElement]));
+  const c004_1 = res1.issues.find((i) => i.ruleId === 'C004');
+  assert.strictEqual(c004_1, undefined, 'Ghost text with empty directText must not trigger C004');
+
+  // Scenario 2: Light beige text on black resolved background (tree climbed) - should NOT trigger C004
+  const lightTextOnDark = createMockElement('portfolio-title', {
+    text: 'TOM DE KONING',
+    directText: 'TOM DE KONING',
+    computedStyle: {
+      color: '#E7E1D7', // Light beige
+      backgroundColor: 'transparent',
+      resolvedBackgroundColor: 'rgb(0, 0, 0)', // Black canvas resolved from body
+    },
+  });
+
+  const res2 = runAudit(createMockContext([lightTextOnDark]));
+  const c004_2 = res2.issues.find((i) => i.ruleId === 'C004');
+  assert.strictEqual(c004_2, undefined, 'Contrast between #E7E1D7 and resolved #000000 is > 16:1, must not trigger C004');
+});
+
+test('Color Rules: C001 ignores SVG brand icons / logo gradient stops from competing accents (Gemini bugfix)', () => {
+  // Scenario: Gemini has 1 primary button (blue), but also an SVG 4-pointed star logo with 5 gradient stops
+  const elements = [
+    createMockElement('gemini-logo-icon', {
+      tag: 'svg',
+      tagName: 'SVG',
+      selector: '.gemini-star-logo',
+      isInteractive: false,
+      computedStyle: {
+        backgroundImage: 'linear-gradient(135deg, rgb(34, 197, 94), rgb(239, 68, 68), rgb(168, 85, 247))',
+      },
+    }),
+    createMockElement('primary-chat-btn', {
+      tag: 'button',
+      tagName: 'BUTTON',
+      selector: '.chat-submit-btn',
+      isInteractive: true,
+      rect: { x: 100, y: 100, width: 80, height: 36, top: 100, right: 180, bottom: 136, left: 100 },
+      computedStyle: {
+        backgroundColor: 'rgb(59, 130, 246)', // Blue primary accent
+      },
+    }),
+  ];
+
+  const res = runAudit(createMockContext(elements, { title: 'Google Gemini' }));
+  const c001 = res.issues.find((i) => i.ruleId === 'C001');
+  assert.strictEqual(c001, undefined, 'SVG logo gradient must not be counted as competing interactive accents');
+});
+
+test('Color Rules: C012 flags many button styles when > 5 variations exist', () => {
+  // Create 7 buttons with different height / radius / font-size configurations
+  const buttonConfigs = [
+    { height: 32, r: '4px', fs: '12px' },
+    { height: 36, r: '6px', fs: '13px' },
+    { height: 40, r: '8px', fs: '14px' },
+    { height: 44, r: '10px', fs: '15px' },
+    { height: 48, r: '12px', fs: '16px' },
+    { height: 52, r: '16px', fs: '18px' },
+    { height: 56, r: '20px', fs: '20px' },
+  ];
+
+  const buttons = buttonConfigs.map((cfg, i) =>
+    createMockElement(`btn-var-${i}`, {
+      tag: 'button',
+      tagName: 'BUTTON',
+      role: 'button',
+      isInteractive: true,
+      rect: { x: 50, y: 50 + i * 40, width: 100, height: cfg.height, top: 50, right: 150, bottom: 50 + cfg.height, left: 50 },
+      computedStyle: {
+        borderRadius: cfg.r,
+        fontSize: cfg.fs,
+        backgroundColor: '#1E293B',
+      },
+    })
+  );
+
+  const res = runAudit(createMockContext(buttons));
+  const c012 = res.issues.find((i) => i.ruleId === 'C012');
+  assert.ok(c012, 'C012 should flag button variation proliferation');
+  assert.strictEqual(c012.title, 'Many button styles');
+  assert.ok(c012.evidence.includes('7 distinct button styles'));
 });

@@ -239,6 +239,28 @@ test('Rule R050: Detects excessive pill border radius overuse', () => {
   assert.ok(issue, 'R050 should flag excessive pills');
 });
 
+test('Rule R050: Exempts search/prompt inputs and searchbox pills from pill overuse', () => {
+  // Search inputs or chat composer pills should not be flagged
+  const searchInputs = Array.from({ length: 6 }, (_, i) =>
+    createMockElement(`search-pill-${i}`, {
+      tag: 'input',
+      tagName: 'INPUT',
+      role: 'searchbox',
+      selector: '.search-chat-prompt-input',
+      computedStyle: {
+        ...createMockElement('d').computedStyle,
+        borderRadius: '9999px',
+      },
+    })
+  );
+
+  const context = createMockContext(searchInputs);
+  const result = runAudit(context);
+
+  const issue = result.issues.find((i) => i.ruleId === 'R050');
+  assert.strictEqual(issue, undefined, 'Search/prompt inputs should be exempted from R050');
+});
+
 test('Rule R060: Detects too many competing hero actions', () => {
   const btn1 = createMockElement('b1', { tagName: 'BUTTON', isInteractive: true });
   const btn2 = createMockElement('b2', { tagName: 'BUTTON', isInteractive: true });

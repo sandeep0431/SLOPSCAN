@@ -22,7 +22,21 @@ export const R050_EverythingIsAPill: Rule = {
       const isPill = r >= 999 || (el.rect.height > 0 && r >= el.rect.height / 2 - 2);
 
       if (isPill) {
-        if (el.tagName === 'IMG' && Math.abs(el.rect.width - el.rect.height) < 8) continue;
+        // Exclude circular icons, avatars, and small square/circular toggles
+        if (Math.abs(el.rect.width - el.rect.height) < 12) continue;
+        if (el.tagName === 'IMG') continue;
+
+        // Exclude standard search inputs, chat prompt composers, and comboboxes
+        const isSearchOrPrompt =
+          el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.role === 'search' ||
+          el.role === 'combobox' ||
+          el.role === 'searchbox' ||
+          (el.selector && /(search|chat|prompt|input|query|composer|ask)/i.test(el.selector));
+
+        if (isSearchOrPrompt) continue;
+
         pillElements.push({ id: el.id, selector: el.selector, section: el.sectionName });
       }
     }

@@ -2,14 +2,16 @@ import type { Rule, ScanContext, Issue } from '../../types/index.ts';
 
 function isSaturatedColor(colorStr: string): boolean {
   if (!colorStr || colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)') return false;
-  const rgbMatch = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  const rgbMatch = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/i);
   if (rgbMatch) {
     const r = parseInt(rgbMatch[1], 10);
     const g = parseInt(rgbMatch[2], 10);
     const b = parseInt(rgbMatch[3], 10);
+    const alpha = rgbMatch[4] !== undefined ? parseFloat(rgbMatch[4]) : 1;
+    if (alpha < 0.45) return false;
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    if (max < 50 || min > 240) return false;
+    if (max < 65 || min > 240) return false;
     const delta = max - min;
     return delta > 30;
   }
@@ -24,7 +26,7 @@ function isSaturatedColor(colorStr: string): boolean {
     const b = parseInt(hex.substring(4, 6), 16);
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    if (max < 50 || min > 240) return false;
+    if (max < 65 || min > 240) return false;
     return max - min > 30;
   }
   if (colorStr.includes('hsl(')) return true;
@@ -170,6 +172,11 @@ export const R004_BlurredBlob: Rule = {
       const isPos = el.computedStyle.position === 'absolute' || el.computedStyle.position === 'fixed';
       if (filter.includes('blur') && isPos) {
         const blurAmount = parseInt(filter.replace(/[^0-9]/g, ''), 10) || 0;
+        const opacity = parseFloat(el.computedStyle.opacity) || 1;
+        // Ignore low-opacity atmospheric haze or dark ambient glow
+        if (opacity <= 0.35) continue;
+        if (el.selector && /(glow|ambient|backdrop|lm-glow)/i.test(el.selector)) continue;
+
         if (blurAmount >= 30 && (el.rect.width > 80 || el.rect.height > 80)) {
           issues.push({
             id: `issue-${el.id}-r004`,

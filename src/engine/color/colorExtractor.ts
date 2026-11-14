@@ -54,6 +54,14 @@ export function extractPageColors(context: ScanContext): {
     // Discard completely transparent / invisible alpha
     if (parsed.a < 0.05) return;
 
+    // Exclude icons, logos, brand badges, and media from being treated as primary interactive accent colors
+    const isExcludedFromAccent =
+      el.tagName === 'SVG' ||
+      el.tagName === 'PATH' ||
+      el.tagName === 'IMG' ||
+      el.tagName === 'CANVAS' ||
+      (el.selector && /(logo|avatar|brand-icon|star-icon|user-avatar|profile)/i.test(el.selector));
+
     const key = `${parsed.hex}-${source}`;
     parsedMap.set(parsed.hex, parsed);
 
@@ -67,7 +75,7 @@ export function extractPageColors(context: ScanContext): {
         selectors: [],
         elementIds: [],
         sections: [],
-        isInteractive: el.isInteractive,
+        isInteractive: el.isInteractive && !isExcludedFromAccent,
         isSaturated: parsed.isSaturated,
         isNeutral: parsed.isNeutral,
         luminance: parsed.luminance,
@@ -101,17 +109,23 @@ export function extractPageColors(context: ScanContext): {
       }
     }
 
-    // 2. Background color
-    const bgColor = el.computedStyle.backgroundColor;
+    // 2. Background color (prefer resolved actual background color from DOM tree climb)
+    const bgColor = el.computedStyle.resolvedBackgroundColor || el.computedStyle.backgroundColor;
     if (bgColor) {
       registerColor(bgColor, 'background', el);
       const parsedBg = parseAndNormalizeColor(bgColor);
       if (parsedBg) elementBackgroundMap.set(el.id, parsedBg);
     }
 
-    // 3. Background gradients
+    // 3. Background gradients (skip logos, brand marks, and icons)
+    const isBrandOrIcon =
+      el.tagName === 'SVG' ||
+      el.tagName === 'PATH' ||
+      el.tagName === 'IMG' ||
+      (el.selector && /(logo|avatar|brand-icon|star-icon)/i.test(el.selector));
+
     const bgImg = el.computedStyle.backgroundImage;
-    if (bgImg && bgImg.includes('gradient')) {
+    if (!isBrandOrIcon && bgImg && bgImg.includes('gradient')) {
       const gradColors = extractColorsFromGradient(bgImg);
       for (const gc of gradColors) {
         registerColor(gc, 'gradient', el);

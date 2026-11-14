@@ -1,7 +1,7 @@
 import type { Rule, ScanContext, Issue } from '../../types/index.ts';
 import { extractPageColors } from './colorExtractor.ts';
 import { analyzeColorRoles, inferProductContext } from './colorRoleAnalyzer.ts';
-import { calculateContrast } from './colorNormalizer.ts';
+import { calculateContrast, parseAndNormalizeColor } from './colorNormalizer.ts';
 
 // C001 — Too Many Competing Accent Colors
 export const C001_TooManyCompetingAccents: Rule = {
@@ -18,9 +18,9 @@ export const C001_TooManyCompetingAccents: Rule = {
 
     const { usages } = extractPageColors(context);
 
-    // Filter to saturated accent usages on interactive or prominent elements
+    // Filter to saturated accent usages on actual interactive controls or buttons
     const accentUsages = usages.filter(
-      (u) => u.isSaturated && (u.isInteractive || u.source === 'background' || u.source === 'gradient')
+      (u) => u.isSaturated && u.isInteractive && u.source !== 'gradient'
     );
 
     const distinctHueFamilies = new Set(accentUsages.map((u) => u.hueGroup));
@@ -29,6 +29,11 @@ export const C001_TooManyCompetingAccents: Rule = {
     if (productContext.includes('Finance')) {
       distinctHueFamilies.delete('green');
       distinctHueFamilies.delete('red');
+    } else if (distinctHueFamilies.size > 2) {
+      // Functional status semantics (green success, red danger, amber warning) shouldn't compete with brand accents
+      if (distinctHueFamilies.has('green')) distinctHueFamilies.delete('green');
+      if (distinctHueFamilies.has('red')) distinctHueFamilies.delete('red');
+      if (distinctHueFamilies.has('amber')) distinctHueFamilies.delete('amber');
     }
 
     if (distinctHueFamilies.size >= 3) {
@@ -155,12 +160,23 @@ export const C004_LowContrastText: Rule = {
   defaultConfidence: 'high',
   run(context: ScanContext): Issue[] {
     const { elementBackgroundMap, elementColorMap } = extractPageColors(context);
-    const lowContrastIssues: { el: any; ratio: number; fg: string; bg: string }[] = [];
+    const lowContrastIssues: { el: any; ratio: number; fg: string; bg: string; displayText: string }[] = [];
 
     for (const el of context.elements) {
-      if (!el.text || el.text.trim().length === 0) continue;
+      const text = (el.directText || el.text || '').trim();
+      // Guard: Ignore empty or trivial non-alphanumeric ghost text
+      if (text.length < 2 || !/[a-zA-Z0-9]/.test(text)) continue;
+
+      // Guard: Ignore visually hidden elements
+      if (el.computedStyle.opacity === '0' || el.computedStyle.display === 'none') continue;
+
       const fg = elementColorMap.get(el.id);
-      const bg = elementBackgroundMap.get(el.id);
+      // Prefer resolved background color
+      let bg = elementBackgroundMap.get(el.id);
+      if (el.computedStyle.resolvedBackgroundColor) {
+        const resolved = parseAndNormalizeColor(el.computedStyle.resolvedBackgroundColor);
+        if (resolved) bg = resolved;
+      }
 
       if (fg && bg) {
         const ratio = calculateContrast(fg.luminance, bg.luminance);
@@ -174,6 +190,7 @@ export const C004_LowContrastText: Rule = {
             ratio: Math.round(ratio * 10) / 10,
             fg: fg.hex,
             bg: bg.hex,
+            displayText: text.slice(0, 35),
           });
         }
       }
@@ -189,7 +206,7 @@ export const C004_LowContrastText: Rule = {
           title: 'Low Contrast Text',
           severity: 'high',
           confidence: 'high',
-          evidence: `Text "${sample.el.directText.slice(0, 35)}" has low contrast ratio (${sample.ratio}:1) between text ${sample.fg} and background ${sample.bg}. (WCAG minimum is 4.5:1).`,
+          evidence: `Text "${sample.displayText}" has low contrast ratio (${sample.ratio}:1) between text ${sample.fg} and background ${sample.bg}. (WCAG minimum is 4.5:1).`,
           recommendation: 'Increase tonal contrast between text and background surfaces to guarantee readability and accessibility compliance.',
           diff: {
             remove: `color: ${sample.fg}; (contrast ratio ${sample.ratio}:1);`,
@@ -511,6 +528,67 @@ export const C011_TooManyTextColors: Rule = {
   },
 };
 
+// C012 — Many Button Styles (Button Consistency System)
+export const C012_ButtonVariationProliferation: Rule = {
+  id: 'C012',
+  name: 'Many button styles',
+  category: 'components',
+  description: 'Flags interfaces with more than 5 distinct button height, padding, or typography configurations.',
+  defaultSeverity: 'medium',
+  defaultConfidence: 'high',
+  run(context: ScanContext): Issue[] {
+    const buttons = context.elements.filter(
+      (e) =>
+        (e.tagName === 'BUTTON' ||
+          e.role === 'button' ||
+          (e.tagName === 'A' && (e.selector.includes('btn') || e.selector.includes('button')))) &&
+        e.rect.width >= 24 &&
+        e.rect.height >= 18
+    );
+
+    if (buttons.length < 6) return [];
+
+    // Group buttons by visual style fingerprint (height, radius, font-size)
+    const styleGroups = new Map<string, string[]>();
+    for (const btn of buttons) {
+      const h = Math.round(btn.rect.height);
+      const r = btn.computedStyle.borderRadius;
+      const fs = btn.computedStyle.fontSize;
+      const key = `h:${h}|r:${r}|fs:${fs}`;
+      if (!styleGroups.has(key)) {
+        styleGroups.set(key, []);
+      }
+      styleGroups.get(key)!.push(btn.id);
+    }
+
+    const distinctStylesCount = styleGroups.size;
+    if (distinctStylesCount > 5) {
+      const sampleBtn = buttons[0];
+      return [
+        {
+          id: 'issue-comp-c012',
+          ruleId: 'C012',
+          category: 'components',
+          title: 'Many button styles',
+          severity: distinctStylesCount >= 10 ? 'medium' : 'low',
+          confidence: 'high',
+          evidence: `${distinctStylesCount} distinct button styles (aim 5 or fewer). Found ${distinctStylesCount} distinct button style variations across the page. Too many suggests no shared system and a less cohesive feel.`,
+          recommendation: 'Consolidate buttons into 2-3 variants (primary, secondary, ghost) with shared padding, radius, and font.',
+          diff: {
+            remove: `${distinctStylesCount} distinct button style configurations;`,
+            add: 'Consolidate to 2-3 standard variants (.btn-primary, .btn-secondary, .btn-ghost);',
+          },
+          selector: sampleBtn?.selector,
+          section: sampleBtn?.sectionName || 'Components',
+          elementIds: buttons.slice(0, 5).map((b) => b.id),
+        },
+      ];
+    }
+
+    return [];
+  },
+};
+
 export const COLOR_RULES: Rule[] = [
   C001_TooManyCompetingAccents,
   C002_AccentColorOveruse,
@@ -523,4 +601,5 @@ export const COLOR_RULES: Rule[] = [
   C009_SemanticColorMisuse,
   C010_ExcessiveSaturation,
   C011_TooManyTextColors,
+  C012_ButtonVariationProliferation,
 ];

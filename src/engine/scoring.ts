@@ -18,7 +18,7 @@ export function calculateSummary(issues: Issue[], context: ScanContext): AuditSu
     motion: 100,
   };
 
-  // Track penalty with cluster protection (max penalty per rule type)
+  const categoryDeductions = new Map<Category, number>();
   const penaltyByRule = new Map<string, number>();
 
   for (const issue of issues) {
@@ -26,26 +26,32 @@ export function calculateSummary(issues: Issue[], context: ScanContext): AuditSu
     else if (issue.severity === 'medium') mediumPriorityCount++;
     else reviewCount++;
 
-    const catPenalty = issue.severity === 'high' ? 12 : issue.severity === 'medium' ? 7 : 4;
-    categoryScores[issue.category] = Math.max(35, categoryScores[issue.category] - catPenalty);
-
-    // Severity base
-    let baseWeight = 2;
-    if (issue.severity === 'high') baseWeight = 8;
-    else if (issue.severity === 'medium') baseWeight = 4;
+    // Max penalty per rule cluster
+    const maxRuleCap = issue.severity === 'high' ? 8 : issue.severity === 'medium' ? 6 : 2;
+    const baseWeight = issue.severity === 'high' ? 8 : issue.severity === 'medium' ? 6 : 2;
 
     // Confidence multiplier
     let mult = 1.0;
-    if (issue.confidence === 'medium') mult = 0.7;
-    else if (issue.confidence === 'review') mult = 0.3;
+    if (issue.confidence === 'medium') mult = 0.75;
+    else if (issue.confidence === 'review') mult = 0.4;
 
     const penalty = baseWeight * mult;
     const current = penaltyByRule.get(issue.ruleId) || 0;
 
-    // Cluster cap: no single rule can deduct more than 16 points
-    if (current < 16) {
-      penaltyByRule.set(issue.ruleId, Math.min(16, current + penalty));
+    // Cluster cap: no single rule can deduct more than its cap
+    if (current < maxRuleCap) {
+      penaltyByRule.set(issue.ruleId, Math.min(maxRuleCap, current + penalty));
     }
+
+    // Category deduction cap (max 12 pts deduction per category)
+    const catPenalty = issue.severity === 'high' ? 6 : issue.severity === 'medium' ? 4 : 2;
+    const currentCatDed = categoryDeductions.get(issue.category) || 0;
+    categoryDeductions.set(issue.category, Math.min(12, currentCatDed + catPenalty));
+  }
+
+  // Update category scores with a soft floor so isolated variations don't crater category health
+  for (const [cat, ded] of categoryDeductions.entries()) {
+    categoryScores[cat] = Math.max(88, Math.round(100 - ded));
   }
 
   let totalDeductions = 0;

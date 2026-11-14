@@ -27,6 +27,7 @@ export interface ComputedStyleSnapshot {
   // Color & Surfaces
   color: string;
   backgroundColor: string;
+  resolvedBackgroundColor?: string;
   backgroundImage: string;
   backgroundClip: string;
   webkitBackgroundClip?: string;

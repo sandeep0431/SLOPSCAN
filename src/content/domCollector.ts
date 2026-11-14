@@ -23,12 +23,16 @@ const IGNORED_TAGS = new Set([
   'META',
   'TITLE',
   'LINK',
+  'CANVAS',
+  'VIDEO',
+  'AUDIO',
 ]);
 
 const SVG_INNER_TAGS = new Set([
+  'SVG',
   'PATH',
   'DEFS',
-  'CLIPPATTH',
+  'CLIPPATH',
   'G',
   'MASK',
   'USE',
@@ -38,6 +42,48 @@ const SVG_INNER_TAGS = new Set([
   'POLYGON',
   'POLYLINE',
 ]);
+
+/**
+ * Resolves the true rendered background color by walking up the DOM tree
+ * until finding a non-transparent background layer.
+ */
+export function resolveActualBackgroundColor(el: Element): string {
+  let curr: Element | null = el;
+  while (curr && curr !== document.documentElement) {
+    const style = window.getComputedStyle(curr);
+    const bg = style.backgroundColor;
+    if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+      const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i);
+      if (match) {
+        const alpha = match[4] !== undefined ? parseFloat(match[4]) : 1;
+        if (alpha > 0.05) {
+          return bg;
+        }
+      } else {
+        return bg;
+      }
+    }
+    curr = curr.parentElement;
+  }
+
+  // Fallback to body or document element background
+  try {
+    const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+    if (bodyBg && bodyBg !== 'transparent' && bodyBg !== 'rgba(0, 0, 0, 0)') {
+      return bodyBg;
+    }
+  } catch {
+    // guarded
+  }
+
+  // Fallback based on dark/light scheme
+  const isDark =
+    window.matchMedia('(prefers-color-scheme: dark)').matches ||
+    document.documentElement.classList.contains('dark') ||
+    document.body.classList.contains('dark');
+
+  return isDark ? 'rgb(9, 11, 16)' : 'rgb(255, 255, 255)';
+}
 
 export function collectPageSnapshot(): PageSnapshot {
   const metaDesc = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
@@ -64,7 +110,7 @@ export function collectPageSnapshot(): PageSnapshot {
 export function collectVisibleElements(sections: SectionSnapshot[]): ElementSnapshot[] {
   const elements: ElementSnapshot[] = [];
   const allNodes = document.body.querySelectorAll('*');
-  const maxElements = 1200; // Performance bound
+  const maxElements = 2500; // Expanded to cover full page scroll depth
 
   let scannedCount = 0;
 
@@ -164,6 +210,7 @@ export function collectVisibleElements(sections: SectionSnapshot[]): ElementSnap
     const computedStyleSnapshot: ComputedStyleSnapshot = {
       color: style.color,
       backgroundColor: style.backgroundColor,
+      resolvedBackgroundColor: resolveActualBackgroundColor(el),
       backgroundImage: effectiveBgImage,
       backgroundClip: style.backgroundClip || (style as unknown as Record<string, string>)['-webkit-background-clip'] || '',
       webkitBackgroundClip: (style as unknown as Record<string, string>)['-webkit-background-clip'] || '',

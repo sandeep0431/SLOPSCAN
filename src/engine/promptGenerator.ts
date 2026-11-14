@@ -56,7 +56,12 @@ export function generateFixPrompt(scanResult: ScanResult): string {
         prompt += `- **Target Element**: \`${issue.selector}\`\n`;
       }
       prompt += `- **Evidence**: ${issue.evidence}\n`;
-      prompt += `- **Prescribed Fix**: ${issue.recommendation}\n\n`;
+      prompt += `- **Prescribed Fix**: ${issue.recommendation}\n`;
+      if (issue.diff) {
+        prompt += `- **Code Change**:\n`;
+        prompt += `\`\`\`diff\n- ${issue.diff.remove}\n+ ${issue.diff.add}\n\`\`\`\n`;
+      }
+      prompt += `\n`;
     }
     prompt += `---\n\n`;
   }
@@ -114,6 +119,60 @@ export function generateFixPrompt(scanResult: ScanResult): string {
     prompt += `  --color-error: ${cs.recommendations.establish.error};\n`;
     prompt += `}\n`;
     prompt += `\`\`\`\n\n`;
+
+    prompt += `### Token Application Mapping\n`;
+    prompt += `Apply the established tokens across your component architecture:\n\n`;
+    prompt += `\`\`\`css\n`;
+    prompt += `/* Base surfaces & typography */\n`;
+    prompt += `body, html {\n`;
+    prompt += `  background-color: var(--canvas);\n`;
+    prompt += `  color: var(--text-primary);\n`;
+    prompt += `}\n\n`;
+    prompt += `/* Cards & structural panels */\n`;
+    prompt += `.card, [class*="card"], [class*="panel"] {\n`;
+    prompt += `  background-color: var(--surface);\n`;
+    prompt += `  border: 1px solid var(--border);\n`;
+    prompt += `}\n\n`;
+    prompt += `/* Secondary text & metadata */\n`;
+    prompt += `p, .description, [class*="subtitle"] {\n`;
+    prompt += `  color: var(--text-secondary);\n`;
+    prompt += `}\n\n`;
+    prompt += `/* Interactive buttons & CTAs */\n`;
+    prompt += `button.primary, .btn-primary, [role="button"].primary {\n`;
+    prompt += `  background-color: var(--color-primary);\n`;
+    prompt += `  color: #FFFFFF;\n`;
+    prompt += `  border: none;\n`;
+    prompt += `}\n`;
+    prompt += `button.primary:hover, .btn-primary:hover {\n`;
+    prompt += `  background-color: var(--color-primary-hover);\n`;
+    prompt += `}\n`;
+    prompt += `\`\`\`\n\n`;
+
+    // Hex-to-Token Migration Table mapping detected colors to tokens
+    const detectedRoles = cs.roles;
+    if (detectedRoles && detectedRoles.length > 0) {
+      prompt += `### Hex-to-Token Migration Table\n`;
+      prompt += `Migrate hardcoded colors found in the markup to semantic tokens:\n\n`;
+      prompt += `| Detected Color | Role / Classification | Recommended Token |\n`;
+      prompt += `| :--- | :--- | :--- |\n`;
+      for (const col of detectedRoles.slice(0, 10)) {
+        let recToken = 'var(--text-secondary)';
+        if (col.role === 'primary-accent' || col.role === 'secondary-accent') recToken = 'var(--color-primary)';
+        else if (col.role === 'canvas') recToken = 'var(--canvas)';
+        else if (col.role === 'surface' || col.role === 'surface-raised' || col.role === 'surface-subtle') recToken = 'var(--surface)';
+        else if (col.role === 'text-primary') recToken = 'var(--text-primary)';
+        else if (col.role === 'text-secondary') recToken = 'var(--text-secondary)';
+        else if (col.role === 'text-muted') recToken = 'var(--text-muted)';
+        else if (col.role === 'border' || col.role === 'border-strong') recToken = 'var(--border)';
+        else if (col.role === 'success') recToken = 'var(--color-success)';
+        else if (col.role === 'warning') recToken = 'var(--color-warning)';
+        else if (col.role === 'error') recToken = 'var(--color-error)';
+        else if (col.role === 'decorative') recToken = 'var(--color-primary)';
+
+        prompt += `| \`${col.normalizedHex}\` | ${col.role} | \`${recToken}\` |\n`;
+      }
+      prompt += `\n`;
+    }
 
     prompt += `### Color System Guardrails\n`;
     for (const rule of cs.recommendations.rules) {
